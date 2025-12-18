@@ -7,3 +7,4 @@ __pycache__/
 *.pyc
 .env.local
 bot/bot.py.backup
+.env
