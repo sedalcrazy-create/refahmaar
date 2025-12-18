@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(file:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(git clone:*)",
+      "Bash(npm install:*)",
+      "Bash(node --check:*)",
+      "Bash(tar:*)",
+      "Bash(sshpass -p 'UJIr3a9UyH#b' ssh -o StrictHostKeyChecking=no root@37.152.174.87 \"hostname && pwd && whoami\")",
+      "Bash(ssh miniapbale:*)",
+      "Bash(scp:*)",
+      "Bash(python -c \"\nbot_code = ''''''#!/usr/bin/env python3\n# -*- coding: utf-8 -*-\nimport os\nimport time\nimport requests\n\nBOT_TOKEN = os.getenv(''BALE_BOT_TOKEN'', ''64658763:rgYSwBxd05vEuuuNNbNNYZdtA-T1Gxdx5nw'')\nGAME_URL = os.getenv(''GAME_URL'', ''https://snake.darmanjoo.ir'')\nAPI_URL = os.getenv(''API_URL'', ''http://app:3001'')\n\nprint(''Bot starting...'')\nprint(f''Game URL: {GAME_URL}'')\nprint(f''API URL: {API_URL}'')\nprint(''Bot running. Press Ctrl+C to stop.'')\n\n# Keep bot running\nwhile True:\n    time.sleep(60)\n''''''\n\nwith open(''bot/bot.py'', ''w'', encoding=''utf-8'') as f:\n    f.write(bot_code)\n\nprint(''Bot file created'')\n\")",
+      "Bash(git init:*)",
+      "Bash(git config:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>چالش مار یلدایی - اداره کل رفاه و درمان</title>
+
+    <!-- Bale Mini App SDK -->
+    <script src="https://tapi.bale.ai/miniapp.js?3"></script>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <!-- Registration Form -->
+    <div id="registration-screen" class="screen">
+        <div class="container">
+            <h1>🎮 چالش مار یلدایی</h1>
+            <p class="subtitle">شب یلدا مبارک!</p>
+
+            <form id="registration-form">
+                <div class="form-group">
+                    <label>نام:</label>
+                    <input type="text" id="first-name" required placeholder="نام خود را وارد کنید">
+                </div>
+
+                <div class="form-group">
+                    <label>نام خانوادگی:</label>
+                    <input type="text" id="last-name" required placeholder="نام خانوادگی خود را وارد کنید">
+                </div>
+
+                <div class="form-group">
+                    <label>کد استخدامی:</label>
+                    <input type="text" id="employee-code" required placeholder="کد استخدامی خود را وارد کنید">
+                </div>
+
+                <button type="submit" class="btn-primary">ورود به بازی</button>
+            </form>
+
+            <div id="error-message" class="error-message"></div>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="screen hidden">
+        <div class="game-header">
+            <div class="player-info">
+                <span id="player-name"></span>
+                <span id="player-score">امتیاز: 0</span>
+            </div>
+            <button id="show-leaderboard" class="btn-secondary">🏆 رتبه‌بندی</button>
+        </div>
+
+        <div id="canvas-container">
+            <canvas id="game-canvas"></canvas>
+        </div>
+
+        <div class="game-controls">
+            <div class="control-row">
+                <button class="control-btn" data-key="38">↑</button>
+            </div>
+            <div class="control-row">
+                <button class="control-btn" data-key="37">←</button>
+                <button class="control-btn" data-key="40">↓</button>
+                <button class="control-btn" data-key="39">→</button>
+            </div>
+        </div>
+
+        <div class="game-info">
+            <p>🍎 سیب = 1 امتیاز | 🍉 هندوانه = 5 امتیاز | 🍇 انار = 10 امتیاز</p>
+        </div>
+    </div>
+
+    <!-- Leaderboard Modal -->
+    <div id="leaderboard-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🏆 برترین بازیکنان</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div id="leaderboard-list"></div>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+        <p>در حال بارگذاری...</p>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/main.js"></script>
+</body>
+</html>

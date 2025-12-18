@@ -1,0 +1,9 @@
+node_modules/
+sample-code/
+*.log
+*.tar.gz
+.DS_Store
+__pycache__/
+*.pyc
+.env.local
+bot/bot.py.backup
