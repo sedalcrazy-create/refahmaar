@@ -8,36 +8,97 @@
     <!-- Bale Mini App SDK -->
     <script src="https://tapi.bale.ai/miniapp.js?3"></script>
 
+    <!-- Fonts -->
+    <style>
+        @font-face {
+            font-family: 'BYekan';
+            src: url('fonts/BYekan/BYekan+.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'BYekan';
+            src: url('fonts/BYekan/BYekan+ Bold.ttf') format('truetype');
+            font-weight: bold;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        * {
+            font-family: 'BYekan', Tahoma, Arial, sans-serif !important;
+        }
+    </style>
+
     <!-- Styles -->
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-    <!-- Registration Form -->
-    <div id="registration-screen" class="screen">
-        <div class="container">
-            <h1>🎮 چالش مار یلدایی</h1>
-            <p class="subtitle">شب یلدا مبارک!</p>
+    <!-- Login Screen -->
+    <div id="login-screen" class="screen active">
+        <div class="yalda-background">
+            <div class="yalda-pattern"></div>
+            <div class="floating-fruits">
+                <span class="fruit">🍎</span>
+                <span class="fruit">🍉</span>
+                <span class="fruit">🍇</span>
+                <span class="fruit">🍊</span>
+                <span class="fruit">🍋</span>
+                <span class="fruit">🌙</span>
+                <span class="fruit">⭐</span>
+            </div>
+        </div>
 
-            <form id="registration-form">
-                <div class="form-group">
-                    <label>نام:</label>
-                    <input type="text" id="first-name" required placeholder="نام خود را وارد کنید">
+        <div class="login-container">
+            <!-- Animated Logo -->
+            <div class="logo-container">
+                <div class="logo-glow-outer"></div>
+                <div class="logo-wrapper">
+                    <div class="logo-glow"></div>
+                    <img src="assets/logo-bmi.png" alt="لوگو" class="logo-img">
                 </div>
+                <div class="loading-ring"></div>
+            </div>
 
-                <div class="form-group">
-                    <label>نام خانوادگی:</label>
-                    <input type="text" id="last-name" required placeholder="نام خانوادگی خود را وارد کنید">
-                </div>
+            <!-- Title -->
+            <div class="login-header">
+                <h1 class="login-title">🎮 چالش مار یلدایی</h1>
+                <p class="login-subtitle">شب یلدای خجسته مبارک</p>
+                <p class="login-tagline">اداره کل رفاه و درمان</p>
+            </div>
 
-                <div class="form-group">
-                    <label>کد استخدامی:</label>
-                    <input type="text" id="employee-code" required placeholder="کد استخدامی خود را وارد کنید">
-                </div>
+            <!-- Login Form -->
+            <div class="login-form-wrapper">
+                <form id="login-form" class="login-form">
+                    <div class="form-group">
+                        <div class="input-icon">👤</div>
+                        <input type="text" id="first-name" required placeholder="نام" class="form-input">
+                    </div>
 
-                <button type="submit" class="btn-primary">ورود به بازی</button>
-            </form>
+                    <div class="form-group">
+                        <div class="input-icon">👤</div>
+                        <input type="text" id="last-name" required placeholder="نام خانوادگی" class="form-input">
+                    </div>
 
-            <div id="error-message" class="error-message"></div>
+                    <div class="form-group">
+                        <div class="input-icon">🔢</div>
+                        <input type="text" id="employee-code" required placeholder="کد استخدامی" class="form-input">
+                    </div>
+
+                    <button type="submit" class="btn-login">
+                        <span class="btn-text">ورود به بازی</span>
+                        <span class="btn-icon">🎯</span>
+                    </button>
+                </form>
+
+                <div id="error-message" class="error-message"></div>
+            </div>
+
+            <!-- Footer -->
+            <div class="login-footer">
+                <p class="footer-text">✨ در شب یلدا، با بازی مار همراه باشید ✨</p>
+            </div>
         </div>
     </div>
 
@@ -48,10 +109,10 @@
                 <span id="player-name"></span>
                 <span id="player-score">امتیاز: 0</span>
             </div>
-            <button id="show-leaderboard" class="btn-secondary">🏆 رتبه‌بندی</button>
+            <button id="show-leaderboard" class="btn-leaderboard">🏆 برترین‌ها</button>
         </div>
 
-        <div id="canvas-container">
+        <div class="game-container">
             <canvas id="game-canvas"></canvas>
         </div>
 
@@ -67,7 +128,7 @@
         </div>
 
         <div class="game-info">
-            <p>🍎 سیب = 1 امتیاز | 🍉 هندوانه = 5 امتیاز | 🍇 انار = 10 امتیاز</p>
+            <p>🍎 سیب = 10 امتیاز | 🍉 هندوانه = 20 امتیاز | 🍇 انار = 30 امتیاز</p>
         </div>
     </div>
 
