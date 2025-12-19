@@ -80,8 +80,8 @@ function initBale() {
 // Check user status on page load
 function checkUserStatus() {
     if (!baleUserData || !baleUserData.baleUserId) {
-        console.log('No Bale user data - showing full registration form');
-        userStatus = 'new';
+        console.log('No Bale user data - user needs to register in bot');
+        showError('لطفاً ابتدا از طریق ربات @refahsnakebot ثبت‌نام کنید');
         return;
     }
 
@@ -94,19 +94,15 @@ function checkUserStatus() {
 
         if (response && response.success) {
             if (response.needsRegistration) {
-                userStatus = 'new';
-                console.log('User not found - showing full registration form');
+                console.log('User not registered - needs to register in bot first');
+                showError('لطفاً ابتدا از طریق ربات @refahsnakebot ثبت‌نام کنید و سپس دوباره بازی را باز کنید');
             } else if (response.user) {
-                if (response.user.first_name === 'pending' || response.user.last_name === 'pending') {
-                    userStatus = 'pending';
-                    console.log('Pending user - showing name fields only');
-                    hideEmployeeCodeField();
-                } else {
-                    userStatus = 'complete';
-                    console.log('Complete user - skipping login');
-                    startGame(response.user.first_name, response.user.last_name);
-                }
+                userStatus = 'complete';
+                console.log('Complete user - starting game');
+                startGame(response.user.first_name, response.user.last_name);
             }
+        } else {
+            showError('خطا در اتصال به سرور. لطفاً دوباره تلاش کنید');
         }
     });
 }
@@ -273,93 +269,28 @@ function init() {
     // Request landscape orientation on mobile
     requestLandscapeOrientation();
 
-    // Pre-fill form if Bale data available
-    if (baleUserData) {
-        document.getElementById('first-name').value = baleUserData.firstName;
-        document.getElementById('last-name').value = baleUserData.lastName;
+    // Registration is disabled in mini-app - users must register via bot
+    // Hide the login form since registration happens only in bot
+    if (loginForm) {
+        loginForm.style.display = 'none';
     }
 
-    // Registration form submit
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const firstName = document.getElementById('first-name').value.trim();
-        const lastName = document.getElementById('last-name').value.trim();
-        const employeeCode = document.getElementById('employee-code').value.trim();
-
-        if (!firstName || !lastName) {
-            showError('لطفاً نام و نام خانوادگی را وارد کنید');
-            return;
+    // Show message that registration must happen in bot
+    const loginScreen = document.getElementById('login-screen');
+    if (loginScreen) {
+        const message = document.createElement('div');
+        message.style.cssText = 'text-align:center; padding:40px 20px; color:white; font-size:18px;';
+        message.innerHTML = `
+            <h2 style="margin-bottom:20px;">🎮 بازی مار یلدایی</h2>
+            <p style="margin-bottom:15px;">برای شروع بازی، ابتدا باید در ربات ثبت‌نام کنید</p>
+            <p style="font-size:16px; opacity:0.8;">👉 @refahsnakebot</p>
+        `;
+        const container = loginScreen.querySelector('.login-container');
+        if (container) {
+            container.innerHTML = '';
+            container.appendChild(message);
         }
-
-        if (userStatus !== 'pending' && !employeeCode) {
-            showError('لطفاً کد استخدامی را وارد کنید');
-            return;
-        }
-
-        if (!baleUserData) {
-            baleUserData = {
-                baleUserId: 'test_' + Date.now(),
-                phoneNumber: '',
-                firstName: firstName,
-                lastName: lastName
-            };
-        }
-        loading.classList.remove('hidden');
-
-        if (userStatus === 'pending') {
-            // Update pending user names
-            socket.emit('update user names', {
-                baleUserId: baleUserData.baleUserId,
-                firstName: firstName,
-                lastName: lastName
-            }, (response) => {
-                loading.classList.add('hidden');
-
-                if (response.success) {
-                    console.log('Names updated successfully');
-                    loginScreen.classList.add('hidden');
-                    gameScreen.classList.remove('hidden');
-                    document.getElementById('player-name').textContent = firstName + ' ' + lastName;
-
-                    // Join the game
-                    socket.emit('join', {
-                        baleUserId: baleUserData.baleUserId,
-                        name: firstName + ' ' + lastName
-                    });
-                } else {
-                    showError('خطا در بروزرسانی اطلاعات: ' + (response.error || 'خطای نامشخص'));
-                }
-            });
-        } else {
-            // Register new user
-            socket.emit('register user', {
-                baleUserId: baleUserData.baleUserId,
-                phoneNumber: baleUserData.phoneNumber || '',
-                firstName: firstName,
-                lastName: lastName,
-                employeeCode: employeeCode
-            }, (response) => {
-                loading.classList.add('hidden');
-
-                if (response.success) {
-                    console.log('Registration successful');
-                    loginScreen.classList.add('hidden');
-                    gameScreen.classList.remove('hidden');
-                    document.getElementById('player-name').textContent = firstName + ' ' + lastName;
-
-                    // Join the game
-                    socket.emit('join', {
-                        baleUserId: baleUserData.baleUserId,
-                        name: firstName + ' ' + lastName
-                    });
-                } else {
-                    showError('خطا در ثبت‌نام: ' + (response.error || 'خطای نامشخص'));
-                }
-            });
-        }
-
-    });
+    }
     // Leaderboard
     showLeaderboardBtn.addEventListener('click', () => {
         socket.emit('request leaderboard', (response) => {
