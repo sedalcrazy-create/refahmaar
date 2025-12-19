@@ -3,8 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="screen-orientation" content="landscape">
     <title>چالش مار یلدایی - اداره کل رفاه و درمان</title>
 
     <!-- Bale Mini App SDK -->
@@ -13,28 +11,28 @@
     <!-- Fonts -->
     <style>
         @font-face {
-            font-family: 'IranSans';
-            src: url('fonts/iran_sans.ttf') format('truetype');
+            font-family: 'BYekan';
+            src: url('fonts/BYekan/BYekan+.ttf') format('truetype');
             font-weight: normal;
             font-style: normal;
             font-display: swap;
         }
 
         @font-face {
-            font-family: 'IranSans';
-            src: url('fonts/iran_sans_bold.ttf') format('truetype');
+            font-family: 'BYekan';
+            src: url('fonts/BYekan/BYekan+ Bold.ttf') format('truetype');
             font-weight: bold;
             font-style: normal;
             font-display: swap;
         }
 
         * {
-            font-family: 'IranSans', Tahoma, Arial, sans-serif !important;
+            font-family: 'BYekan', Tahoma, Arial, sans-serif !important;
         }
     </style>
 
     <!-- Styles -->
-    <link rel="stylesheet" href="/css/style.css?v=20251219">
+    <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
     <!-- Login Screen -->
@@ -49,15 +47,6 @@
                 <div class="shape shape-1"></div>
                 <div class="shape shape-2"></div>
                 <div class="shape shape-3"></div>
-            </div>
-            <!-- Floating Yalda Fruits -->
-            <div class="floating-fruits">
-                <span class="yalda-fruit">🍉</span>
-                <span class="yalda-fruit">🍇</span>
-                <span class="yalda-fruit">🍉</span>
-                <span class="yalda-fruit">🍇</span>
-                <span class="yalda-fruit">🍉</span>
-                <span class="yalda-fruit">🍇</span>
             </div>
         </div>
 
@@ -114,17 +103,19 @@
 
             <!-- Footer -->
             <div class="login-footer">
-                <p class="footer-text">✨ شادابی و سلامت در سایه رفاه ✨</p>
+                <p class="footer-text">✨ در شب یلدا، با بازی مار همراه باشید ✨</p>
             </div>
         </div>
     </div>
 
     <!-- Game Screen -->
     <div id="game-screen" class="screen hidden">
-        <div class="game-hud">
-            <span id="player-name" class="player-name"></span>
-            <span id="player-score" class="score">امتیاز: 0</span>
-            <button id="show-leaderboard" class="btn-leaderboard">🏆</button>
+        <div class="game-header">
+            <div class="player-info">
+                <span id="player-name"></span>
+                <span id="player-score">امتیاز: 0</span>
+            </div>
+            <button id="show-leaderboard" class="btn-leaderboard">🏆 برترین‌ها</button>
         </div>
 
         <div class="game-container">
@@ -141,6 +132,10 @@
                 <button class="control-btn" data-key="39">→</button>
             </div>
         </div>
+
+        <div class="game-info">
+            <p>🍎 سیب = 10 امتیاز | 🍉 هندوانه = 20 امتیاز | 🍇 انار = 30 امتیاز</p>
+        </div>
     </div>
 
     <!-- Leaderboard Modal -->
@@ -154,33 +149,6 @@
         </div>
     </div>
 
-    <!-- Start Game Overlay -->
-    <div id="start-overlay" class="game-overlay hidden">
-        <div class="overlay-content">
-            <h1 class="game-title">🐍 چالش مار یلدایی</h1>
-            <p class="game-subtitle">اداره کل رفاه و درمان</p>
-            <button id="start-game-btn" class="btn-primary">شروع بازی</button>
-            <div class="game-instructions">
-                <p>💡 راهنما:</p>
-                <p>روی موبایل: انگشت خود را بکشید</p>
-                <p>روی کامپیوتر: کلیدهای جهت‌دار</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Game Over Overlay -->
-    <div id="gameover-overlay" class="game-overlay hidden">
-        <div class="overlay-content">
-            <h1 class="gameover-title">بازی تمام شد!</h1>
-            <div class="final-stats">
-                <p>امتیاز نهایی: <span id="final-score">0</span></p>
-                <p>زمان بازی: <span id="game-time">0</span> ثانیه</p>
-            </div>
-            <p class="score-saved">✅ امتیاز شما ثبت شد</p>
-            <button id="play-again-btn" class="btn-primary">بازی مجدد</button>
-        </div>
-    </div>
-
     <!-- Loading -->
     <div id="loading" class="loading hidden">
         <div class="spinner"></div>
@@ -188,17 +156,8 @@
     </div>
 
     <!-- Scripts -->
-    <!-- PixiJS v8 -->
-    <script src="https://cdn.jsdelivr.net/npm/pixi.js@8.5.2/dist/pixi.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@pixi/particle-emitter@5.0.8/dist/pixi-particles.min.js"></script>
-
     <script src="/socket.io/socket.io.js"></script>
-
-    <!-- Game rendering modules (load before game.js) -->
-    <script src="/js/asset-generator.js?v=20251219"></script>
-    <script src="/js/particle-effects.js?v=20251219"></script>
-    <script src="/js/pixi-renderer.js?v=20251219"></script>
-    <script src="/js/game.js?v=20251219"></script>
+    <script src="/js/main.js"></script>
 
     <!-- Snowfall Script -->
     <script>

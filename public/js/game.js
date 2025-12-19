@@ -25,13 +25,28 @@ socket.on('disconnect', () => {
     console.log('Socket disconnected');
 });
 
-let canvas, ctx;
+let pixiRenderer = null; // PixiJS renderer instance
 let boardWidth, boardHeight;
-let squareSize = 10;
+let squareSize = 15; // Increased from 10 for better visibility
 let currentPlayer = null;
 let baleUserData = null;
 
 let userStatus = null; // Track user status
+
+// Swipe control variables
+let touchStartX = 0;
+let touchStartY = 0;
+let lastDirectionTime = 0;
+const DIRECTION_THROTTLE = 200; // ms
+let currentDirection = { x: 1, y: 0 }; // Track current direction to prevent 180° turns
+
+// Smooth movement interpolation
+let lastUpdateTime = Date.now();
+let interpolatedPositions = new Map();
+
+// Game state tracking
+let gameStartTime = 0;
+let isGameActive = false;
 
 // Initialize game
 // Initialize Bale SDK
@@ -108,10 +123,135 @@ function hideEmployeeCodeField() {
 function startGame(firstName, lastName) {
     const loginScreen = document.getElementById('login-screen');
     const gameScreen = document.getElementById('game-screen');
+    const startOverlay = document.getElementById('start-overlay');
 
     loginScreen.classList.add('hidden');
     gameScreen.classList.remove('hidden');
+    startOverlay.classList.remove('hidden');
     document.getElementById('player-name').textContent = firstName + ' ' + lastName;
+}
+
+// Actually begin gameplay
+function beginGame() {
+    const startOverlay = document.getElementById('start-overlay');
+    startOverlay.classList.add('hidden');
+
+    isGameActive = true;
+    gameStartTime = Date.now();
+    currentDirection = { x: 1, y: 0 }; // Reset direction (snake starts moving right)
+
+    // Join the actual game
+    socket.emit('join', {
+        baleUserId: baleUserData ? baleUserData.baleUserId : null,
+        name: document.getElementById('player-name').textContent
+    });
+}
+
+// Show game over screen
+function showGameOver(score) {
+    isGameActive = false;
+    const gameOverlay = document.getElementById('gameover-overlay');
+    const gameTime = Math.floor((Date.now() - gameStartTime) / 1000);
+
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('game-time').textContent = gameTime;
+    gameOverlay.classList.remove('hidden');
+}
+
+// Helper function to convert key codes to direction vectors
+function keyCodeToDirection(keyCode) {
+    switch(keyCode) {
+        case 37: return { x: -1, y: 0 }; // Left
+        case 38: return { x: 0, y: -1 }; // Up
+        case 39: return { x: 1, y: 0 };  // Right
+        case 40: return { x: 0, y: 1 };  // Down
+        default: return null;
+    }
+}
+
+// Validate direction change (prevent 180° reversal into snake body)
+function isValidDirectionChange(newDir) {
+    if (!newDir) return false;
+
+    // Check if trying to reverse direction
+    // Example: Left (-1,0) + Right (1,0) = (0,0) - NOT allowed
+    const sumX = currentDirection.x + newDir.x;
+    const sumY = currentDirection.y + newDir.y;
+
+    // If both sum to 0, it's a complete reversal
+    if (sumX === 0 && sumY === 0) {
+        return false;
+    }
+
+    return true;
+}
+
+// Send direction with validation
+function sendDirection(direction) {
+    if (isValidDirectionChange(direction)) {
+        socket.emit('direction', direction);
+        currentDirection = direction;
+    }
+}
+
+// Helper function to get consistent colors for players
+function getPlayerColor(playerId) {
+    const colors = ['#4CAF50', '#2196F3', '#FF9800', '#E91E63', '#9C27B0', '#00BCD4'];
+    const hash = playerId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return colors[hash % colors.length];
+}
+
+// Swipe detection (inspired by hammer.js pattern)
+function handleTouchStart(e) {
+    const touch = e.touches[0];
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+}
+
+function handleTouchMove(e) {
+    if (!touchStartX || !touchStartY) return;
+
+    const now = Date.now();
+    if (now - lastDirectionTime < DIRECTION_THROTTLE) return;
+
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - touchStartX;
+    const deltaY = touch.clientY - touchStartY;
+
+    if (Math.abs(deltaX) < 30 && Math.abs(deltaY) < 30) return;
+
+    let direction = null;
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        direction = deltaX > 0 ? { x: 1, y: 0 } : { x: -1, y: 0 };
+    } else {
+        direction = deltaY > 0 ? { x: 0, y: 1 } : { x: 0, y: -1 };
+    }
+
+    if (direction) {
+        sendDirection(direction);
+        lastDirectionTime = now;
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
+    }
+}
+
+function handleTouchEnd() {
+    touchStartX = 0;
+    touchStartY = 0;
+}
+
+// Request landscape orientation
+function requestLandscapeOrientation() {
+    try {
+        // Try to lock orientation to landscape (if supported)
+        if (screen.orientation && screen.orientation.lock) {
+            screen.orientation.lock('landscape').catch(err => {
+                console.log('Orientation lock not supported or denied:', err);
+            });
+        }
+    } catch (error) {
+        console.log('Orientation API not available:', error);
+    }
 }
 
 // Initialize game
@@ -129,9 +269,9 @@ function init() {
     const closeModalBtn = document.querySelector('.close-modal');
     const loading = document.getElementById('loading');
 
-    // Canvas
-    canvas = document.getElementById('game-canvas');
-    ctx = canvas.getContext('2d');
+    // Canvas will be replaced by PixiJS renderer after 'init' socket event
+    // Request landscape orientation on mobile
+    requestLandscapeOrientation();
 
     // Pre-fill form if Bale data available
     if (baleUserData) {
@@ -155,7 +295,6 @@ function init() {
         if (userStatus !== 'pending' && !employeeCode) {
             showError('لطفاً کد استخدامی را وارد کنید');
             return;
-        }
         }
 
         if (!baleUserData) {
@@ -182,6 +321,12 @@ function init() {
                     loginScreen.classList.add('hidden');
                     gameScreen.classList.remove('hidden');
                     document.getElementById('player-name').textContent = firstName + ' ' + lastName;
+
+                    // Join the game
+                    socket.emit('join', {
+                        baleUserId: baleUserData.baleUserId,
+                        name: firstName + ' ' + lastName
+                    });
                 } else {
                     showError('خطا در بروزرسانی اطلاعات: ' + (response.error || 'خطای نامشخص'));
                 }
@@ -202,12 +347,19 @@ function init() {
                     loginScreen.classList.add('hidden');
                     gameScreen.classList.remove('hidden');
                     document.getElementById('player-name').textContent = firstName + ' ' + lastName;
+
+                    // Join the game
+                    socket.emit('join', {
+                        baleUserId: baleUserData.baleUserId,
+                        name: firstName + ' ' + lastName
+                    });
                 } else {
                     showError('خطا در ثبت‌نام: ' + (response.error || 'خطای نامشخص'));
                 }
             });
         }
 
+    });
     // Leaderboard
     showLeaderboardBtn.addEventListener('click', () => {
         socket.emit('request leaderboard', (response) => {
@@ -226,7 +378,10 @@ function init() {
     document.querySelectorAll('.control-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const keyCode = parseInt(btn.getAttribute('data-key'));
-            socket.emit('key down', keyCode);
+            const direction = keyCodeToDirection(keyCode);
+            if (direction) {
+                sendDirection(direction);
+            }
         });
     });
 
@@ -234,37 +389,86 @@ function init() {
     document.addEventListener('keydown', (e) => {
         if ([37, 38, 39, 40].includes(e.keyCode)) {
             e.preventDefault();
-            socket.emit('key down', e.keyCode);
+            const direction = keyCodeToDirection(e.keyCode);
+            if (direction) {
+                sendDirection(direction);
+            }
         }
     });
 
+    // Swipe controls for mobile - attach to document body (works with any canvas)
+    document.body.addEventListener('touchstart', handleTouchStart, { passive: true });
+    document.body.addEventListener('touchmove', handleTouchMove, { passive: true });
+    document.body.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+    // Hide control buttons on mobile (swipe is better UX)
+    if ('ontouchstart' in window) {
+        const controls = document.querySelector('.game-controls');
+        if (controls) controls.style.display = 'none';
+    }
+
+    // Start game button
+    document.getElementById('start-game-btn').addEventListener('click', beginGame);
+
+    // Play again button
+    document.getElementById('play-again-btn').addEventListener('click', () => {
+        document.getElementById('gameover-overlay').classList.add('hidden');
+        beginGame();
+    });
+
     // Socket events
-    socket.on('new player info', (data) => {
-        currentPlayer = data;
+    socket.on('init', async (data) => {
+        console.log('Game initialized:', data);
+        currentPlayer = { playerId: data.playerId };
+        boardWidth = data.boardWidth;
+        boardHeight = data.boardHeight;
+
+        // Initialize PixiJS renderer
+        const canvasElement = document.getElementById('game-canvas');
+        pixiRenderer = new PixiSnakeRenderer(
+            canvasElement,
+            boardWidth,
+            boardHeight,
+            squareSize
+        );
+
+        // Wait for renderer to initialize
+        await pixiRenderer.ready;
+        console.log('PixiJS renderer ready');
     });
 
-    socket.on('board info', (data) => {
-        boardWidth = data.width;
-        boardHeight = data.height;
-        canvas.width = boardWidth * squareSize;
-        canvas.height = boardHeight * squareSize;
-    });
+    socket.on('update', (data) => {
+        const gameState = {
+            players: data.players ? data.players.map(p => ({
+                id: p.id,
+                name: p.name,
+                segments: p.snake,
+                score: p.score,
+                color: getPlayerColor(p.id)
+            })) : [],
+            food: data.food ? data.food.map(f => ({
+                x: f.x,
+                y: f.y,
+                emoji: f.emoji
+            })) : []
+        };
 
-    socket.on('game update', (gameState) => {
         render(gameState);
 
         // Update score
         if (currentPlayer) {
-            const player = gameState.players.find(p => p.id === currentPlayer.playerId);
+            const player = data.players ? data.players.find(p => p.id === currentPlayer.playerId) : null;
             if (player) {
                 document.getElementById('player-score').textContent = `امتیاز: ${player.score}`;
             }
         }
     });
 
-    socket.on('you died', (data) => {
-        // Could show death message
-        console.log('You died! Score:', data.score);
+    socket.on('player-died', (data) => {
+        console.log('Player died:', data);
+        if (data.id === currentPlayer?.playerId) {
+            showGameOver(data.score);
+        }
     });
 }
 
@@ -287,7 +491,6 @@ function displayLeaderboard(leaderboard) {
         item.className = `leaderboard-item rank-${index + 1}`;
 
         const rank = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
-        const rank = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
         const name = player.first_name === 'pending' ? 'بازیکن' : `${player.first_name} ${player.last_name}`;
 
         item.innerHTML = `
@@ -300,82 +503,26 @@ function displayLeaderboard(leaderboard) {
                 <strong>${player.high_score}</strong> امتیاز
             </div>
         `;
+
+        list.appendChild(item);
     });
 }
 
+// Render function - now using PixiJS renderer
 function render(gameState) {
-    // Clear canvas
-    ctx.fillStyle = '#1a1a2e';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Draw grid (optional)
-    ctx.strokeStyle = '#2a2a3e';
-    ctx.lineWidth = 0.5;
-    for (let x = 0; x <= boardWidth; x++) {
-        ctx.beginPath();
-        ctx.moveTo(x * squareSize, 0);
-        ctx.lineTo(x * squareSize, canvas.height);
-        ctx.stroke();
-    }
-    for (let y = 0; y <= boardHeight; y++) {
-        ctx.beginPath();
-        ctx.moveTo(0, y * squareSize);
-        ctx.lineTo(canvas.width, y * squareSize);
-        ctx.stroke();
+    if (!pixiRenderer) {
+        console.warn('PixiJS renderer not initialized yet');
+        return;
     }
 
-    // Draw food
-    if (gameState.food) {
-        Object.values(gameState.food).forEach(food => {
-            ctx.font = `${squareSize * 0.8}px Arial`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(
-                food.emoji,
-                food.coordinate.x * squareSize + squareSize / 2,
-                food.coordinate.y * squareSize + squareSize / 2
-            );
-        });
-    }
-
-    // Draw players
+    // Update players with smooth interpolation
     if (gameState.players) {
-        gameState.players.forEach(player => {
-            if (player.segments && player.segments.length > 0) {
-                player.segments.forEach((segment, index) => {
-                    // Draw snake body
-                    ctx.fillStyle = player.color || '#4CAF50';
+        pixiRenderer.updatePlayers(gameState.players);
+    }
 
-                    // Make head slightly brighter
-                    if (index === 0) {
-                        ctx.shadowBlur = 10;
-                        ctx.shadowColor = player.color || '#4CAF50';
-                    } else {
-                        ctx.shadowBlur = 0;
-                    }
-
-                    ctx.fillRect(
-                        segment.x * squareSize + 1,
-                        segment.y * squareSize + 1,
-                        squareSize - 2,
-                        squareSize - 2
-                    );
-                });
-
-                ctx.shadowBlur = 0;
-
-                // Draw player name above head
-                const head = player.segments[0];
-                ctx.fillStyle = 'white';
-                ctx.font = '10px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(
-                    player.name,
-                    head.x * squareSize + squareSize / 2,
-                    head.y * squareSize - 5
-                );
-            }
-        });
+    // Update food
+    if (gameState.food) {
+        pixiRenderer.updateFood(gameState.food);
     }
 }
 

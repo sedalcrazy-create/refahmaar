@@ -34,6 +34,24 @@ class UserService {
         }
     }
 
+    // Update user names
+    async updateUserNames(userId, firstName, lastName) {
+        const query = `
+            UPDATE users
+            SET first_name = $2, last_name = $3, updated_at = CURRENT_TIMESTAMP
+            WHERE id = $1
+            RETURNING *
+        `;
+
+        try {
+            const result = await db.query(query, [userId, firstName, lastName]);
+            return result.rows[0];
+        } catch (error) {
+            console.error('Error updating user names:', error);
+            throw error;
+        }
+    }
+
     // Save score to leaderboard
     async saveScore(userId, score, gameDuration, snakeLength) {
         const query = `

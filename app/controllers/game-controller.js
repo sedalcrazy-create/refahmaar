@@ -185,6 +185,7 @@ class GameController {
 
             updates.push({
                 id: player.id,
+                name: player.name,
                 snake: player.snake,
                 score: player.score
             });
