@@ -42,11 +42,11 @@ def send_persistent_keyboard(chat_id):
                 {
                     'text': '🎮 شروع بازی',
                     'web_app': {'url': GAME_URL}
-                }
+                },
+                {'text': '🏆 رتبه‌بندی'}
             ],
             [
-                {'text': '📊 آمار من'},
-                {'text': '🏆 جدول امتیازات'}
+                {'text': '📊 آمار من'}
             ]
         ],
         'resize_keyboard': True,
@@ -187,21 +187,15 @@ def handle_start(chat_id, user):
 
         if stats_data and stats_data.get('stats'):
             stats = stats_data['stats']
-            welcome_text = f"""سلام {stats['first_name']} {stats['last_name']} عزیز! 👋
+            welcome_text = f"""خوش آمدید {stats['first_name']} 👋
 
-خوش برگشتید! 🎮
-
-📊 <b>آمار شما:</b>
-• رتبه: {stats['rank'] or 'نامشخص'}
-• بالاترین امتیاز: {stats['high_score']}
-• تعداد بازی: {stats['games_played']}
-
-🌙 شب یلدای خجسته مبارک!"""
+📊 رکورد شما: {stats['high_score']} امتیاز
+🏅 رتبه: {stats['rank'] or 'نامشخص'}"""
 
             keyboard = send_persistent_keyboard(chat_id)
             send_message(chat_id, welcome_text, reply_markup=keyboard, parse_mode='HTML')
         else:
-            welcome_text = f"سلام {first_name} عزیز! 👋\n\nخوش برگشتید! 🎮\n\n🌙 شب یلدا مبارک!"
+            welcome_text = f"خوش آمدید {first_name} 👋"
             keyboard = send_persistent_keyboard(chat_id)
             send_message(chat_id, welcome_text, reply_markup=keyboard)
 
@@ -257,6 +251,22 @@ def handle_employee_code(chat_id, employee_code):
     # Send contact request button
     send_contact_request(chat_id)
 
+def format_phone_number(phone):
+    """Format phone number to 09xxxxxxxxx format"""
+    # Remove any spaces, dashes, or parentheses
+    phone = phone.replace(' ', '').replace('-', '').replace('(', '').replace(')', '')
+    # Remove country code if present
+    if phone.startswith('+98'):
+        phone = '0' + phone[3:]
+    elif phone.startswith('98'):
+        phone = '0' + phone[2:]
+    elif phone.startswith('0098'):
+        phone = '0' + phone[4:]
+    # Ensure it starts with 0
+    if not phone.startswith('0'):
+        phone = '0' + phone
+    return phone
+
 def handle_contact(chat_id, contact):
     """Handle contact (phone number) received"""
     phone_number = contact.get('phone_number')
@@ -265,6 +275,9 @@ def handle_contact(chat_id, contact):
         send_message(chat_id, '❌ شماره تماس دریافت نشد. لطفاً دوباره تلاش کنید.')
         send_contact_request(chat_id)
         return
+
+    # Format phone number
+    phone_number = format_phone_number(phone_number)
 
     user_data = user_states.get(chat_id, {})
     bale_user_id = user_data.get('user_id')
@@ -331,7 +344,7 @@ def handle_message(message):
             send_message(chat_id, 'لطفاً ابتدا دستور /start را ارسال کنید.')
         return
 
-    if text == '🏆 جدول امتیازات':
+    if text == '🏆 رتبه‌بندی' or text == '🏆 جدول امتیازات':
         show_leaderboard(chat_id)
         return
 

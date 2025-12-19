@@ -67,7 +67,7 @@ class PixiSnakeRenderer {
             await this.app.init({
                 width: this.boardWidth * this.squareSize,
                 height: this.boardHeight * this.squareSize,
-                backgroundColor: 0x1a1a2e, // Dark background
+                backgroundColor: 0x2D1B1B, // Yalda theme: warm dark red/brown
                 resolution: this.isMobile ? 1 : (window.devicePixelRatio || 1),
                 autoDensity: true,
                 antialias: true,
@@ -216,9 +216,10 @@ class PixiSnakeRenderer {
                 this.layers.snakes.addChild(container);
                 this.playerContainers.set(player.id, container);
 
-                // Create player name label
+                // Create player name label (show only username/phone)
+                const displayName = player.username || player.name || 'Player';
                 const label = new PIXI.Text({
-                    text: player.name || 'Player',
+                    text: displayName,
                     style: {
                         fontFamily: 'IranSans, Arial',
                         fontSize: 10,

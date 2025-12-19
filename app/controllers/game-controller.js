@@ -45,6 +45,7 @@ class GameController {
                         userId: user ? user.id : null,
                         baleUserId: baleUserId || null,
                         name: playerName,
+                        username: user ? user.username : null,
                         snake: this.createSnake(),
                         direction: { x: 1, y: 0 },
                         score: 0,
@@ -186,6 +187,7 @@ class GameController {
             updates.push({
                 id: player.id,
                 name: player.name,
+                username: player.username,
                 snake: player.snake,
                 score: player.score
             });

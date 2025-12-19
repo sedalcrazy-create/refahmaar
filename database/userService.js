@@ -1,20 +1,30 @@
 'use strict';
 
 const db = require('./db');
+const crypto = require('crypto');
 
 class UserService {
+    // Simple hash function (SHA256) - for production use bcrypt
+    hashPassword(password) {
+        return crypto.createHash('sha256').update(password).digest('hex');
+    }
+
     // Register new user
     async registerUser(baleUserId, phoneNumber, firstName, lastName, employeeCode) {
+        const username = phoneNumber; // username is phone number
+        const passwordHash = this.hashPassword(employeeCode); // password is employee code
+
         const query = `
-            INSERT INTO users (bale_user_id, phone_number, first_name, last_name, employee_code)
-            VALUES ($1, $2, $3, $4, $5)
+            INSERT INTO users (bale_user_id, phone_number, first_name, last_name, employee_code, username, password_hash)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
             ON CONFLICT (bale_user_id) DO UPDATE
-            SET phone_number = $2, first_name = $3, last_name = $4, employee_code = $5, updated_at = CURRENT_TIMESTAMP
+            SET phone_number = $2, first_name = $3, last_name = $4, employee_code = $5,
+                username = $6, password_hash = $7, updated_at = CURRENT_TIMESTAMP
             RETURNING *
         `;
 
         try {
-            const result = await db.query(query, [baleUserId, phoneNumber, firstName, lastName, employeeCode]);
+            const result = await db.query(query, [baleUserId, phoneNumber, firstName, lastName, employeeCode, username, passwordHash]);
             return result.rows[0];
         } catch (error) {
             console.error('Error registering user:', error);
