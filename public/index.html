@@ -34,7 +34,7 @@
     </style>
 
     <!-- Styles -->
-    <link rel="stylesheet" href="/css/style.css?v=20251219">
+    <link rel="stylesheet" href="/css/style.css?v=20251220">
 </head>
 <body>
     <!-- Login Screen -->
@@ -121,8 +121,20 @@
 
     <!-- Game Screen -->
     <div id="game-screen" class="screen hidden">
+        <!-- Game Screen Yalda Background -->
+        <div class="game-yalda-bg">
+            <div class="snowfall game-snow"></div>
+            <div class="floating-fruits game-fruits">
+                <span class="yalda-fruit">🍉</span>
+                <span class="yalda-fruit">🍇</span>
+                <span class="yalda-fruit">🍉</span>
+                <span class="yalda-fruit">🍇</span>
+            </div>
+        </div>
+        
         <div class="game-hud">
             <span id="player-name" class="player-name"></span>
+            <span id="game-timer" class="timer">03:00</span>
             <span id="player-score" class="score">امتیاز: 0</span>
             <button id="show-leaderboard" class="btn-leaderboard">🏆</button>
         </div>
@@ -160,6 +172,15 @@
             <h1 class="game-title">🐍 چالش مار یلدایی</h1>
             <p class="game-subtitle">اداره کل رفاه و درمان</p>
             <button id="start-game-btn" class="btn-primary">شروع بازی</button>
+            <div class="game-rules">
+                <h3>قوانین بازی:</h3>
+                <p>🍉 هندوانه: 1 امتیاز</p>
+                <p>🍇 انار: 5 امتیاز</p>
+                <p>🍎 سیب: 10 امتیاز</p>
+                <p>⏱️ زمان هر بازی: 3 دقیقه</p>
+                <p>🎮 تعداد بازی: 3 بار</p>
+                <p>💀 برخورد با دیوار یا مار = مرگ</p>
+            </div>
             <div class="game-instructions">
                 <p>💡 راهنما:</p>
                 <p>روی موبایل: انگشت خود را بکشید</p>
@@ -195,17 +216,16 @@
     <script src="/socket.io/socket.io.js"></script>
 
     <!-- Game rendering modules (load before game.js) -->
-    <script src="/js/asset-generator.js?v=20251219"></script>
-    <script src="/js/particle-effects.js?v=20251219"></script>
-    <script src="/js/pixi-renderer.js?v=20251219"></script>
-    <script src="/js/game.js?v=20251219"></script>
+    <script src="/js/asset-generator.js?v=20251220"></script>
+    <script src="/js/particle-effects.js?v=20251220"></script>
+    <script src="/js/pixi-renderer.js?v=20251220"></script>
+    <script src="/js/game.js?v=20251220"></script>
 
     <!-- Snowfall Script -->
     <script>
-        // Create snowflakes
-        function createSnowflakes() {
-            const snowfall = document.querySelector('.snowfall');
-            if (!snowfall) return;
+        // Create snowflakes for any snowfall container
+        function createSnowflakes(container) {
+            if (!container) return;
 
             const snowflakeCount = 50;
 
@@ -218,15 +238,19 @@
                 snowflake.style.animationDelay = Math.random() * 5 + 's';
                 snowflake.style.fontSize = (Math.random() * 10 + 10) + 'px';
                 snowflake.style.opacity = Math.random() * 0.6 + 0.4;
-                snowfall.appendChild(snowflake);
+                container.appendChild(snowflake);
             }
         }
 
-        // Initialize snowfall when page loads
+        // Initialize all snowfall containers when page loads
+        function initAllSnowfall() {
+            document.querySelectorAll('.snowfall').forEach(createSnowflakes);
+        }
+        
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', createSnowflakes);
+            document.addEventListener('DOMContentLoaded', initAllSnowfall);
         } else {
-            createSnowflakes();
+            initAllSnowfall();
         }
     </script>
 </body>

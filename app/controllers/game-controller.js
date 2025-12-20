@@ -3,10 +3,12 @@
 const db = require('../../database/db');
 const userService = require('../../database/userService');
 
-const BOARD_WIDTH = parseInt(process.env.BOARD_WIDTH) || 100;
-const BOARD_HEIGHT = parseInt(process.env.BOARD_HEIGHT) || 60;
+const BOARD_WIDTH = parseInt(process.env.BOARD_WIDTH) || 60;
+const BOARD_HEIGHT = parseInt(process.env.BOARD_HEIGHT) || 40;
 const GAME_SPEED = parseInt(process.env.GAME_SPEED) || 10;
-const MAX_PLAYERS = parseInt(process.env.MAX_PLAYERS) || 150;
+const MAX_PLAYERS = parseInt(process.env.MAX_PLAYERS) || 10;
+const MAX_GAMES_PER_USER = 3;
+const GAME_DURATION_SECONDS = 180; // 3 minutes
 
 class GameController {
     constructor() {
@@ -36,6 +38,26 @@ class GameController {
                     let user = null;
                     if (baleUserId) {
                         user = await userService.getUserByBaleId(baleUserId);
+                    }
+
+                    // Check game limit
+                    if (user && user.id) {
+                        try {
+                            const gameCountResult = await db.query(
+                                'SELECT COUNT(*) as count FROM leaderboard WHERE user_id = $1',
+                                [user.id]
+                            );
+                            const gameCount = parseInt(gameCountResult.rows[0].count);
+                            if (gameCount >= MAX_GAMES_PER_USER) {
+                                socket.emit('game-limit-reached', { 
+                                    message: 'شما به حداکثر تعداد بازی (۳ بار) رسیده‌اید',
+                                    gamesPlayed: gameCount
+                                });
+                                return;
+                            }
+                        } catch (err) {
+                            console.error('Error checking game limit:', err);
+                        }
                     }
 
                     const playerName = user ? `${user.first_name} ${user.last_name}` : (name || `Player_${socket.id.substring(0, 6)}`);
@@ -164,6 +186,25 @@ class GameController {
                 return;
             }
 
+            // Check collision with other players
+            let hitOtherPlayer = false;
+            this.players.forEach((otherPlayer, otherId) => {
+                if (otherId !== id && otherPlayer.alive) {
+                    // Check if head hits other player's body (not head)
+                    if (otherPlayer.snake.some((segment, idx) => {
+                        // Skip other player's head for head-to-head collision
+                        return segment.x === newHead.x && segment.y === newHead.y;
+                    })) {
+                        hitOtherPlayer = true;
+                    }
+                }
+            });
+
+            if (hitOtherPlayer) {
+                this.handlePlayerDeath(id, player);
+                return;
+            }
+
             // Check food collision
             const foodIndex = this.food.findIndex(f => f.x === newHead.x && f.y === newHead.y);
             let ate = false;
@@ -212,21 +253,6 @@ class GameController {
                     `INSERT INTO leaderboard (user_id, score, snake_length, game_duration)
                      VALUES ($1, $2, $3, $4)`,
                     [player.userId, player.score, player.snake.length, 0]
-                );
-
-                // Update high score
-                await db.query(
-                    `INSERT INTO high_scores (user_id, score, snake_length, achieved_at)
-                     VALUES ($1, $2, $3, NOW())
-                     ON CONFLICT (user_id)
-                     DO UPDATE SET
-                         score = GREATEST(high_scores.score, $2),
-                         snake_length = GREATEST(high_scores.snake_length, $3),
-                         achieved_at = CASE
-                             WHEN $2 > high_scores.score THEN NOW()
-                             ELSE high_scores.achieved_at
-                         END`,
-                    [player.userId, player.score, player.snake.length]
                 );
             } catch (error) {
                 console.error('Error saving score:', error);

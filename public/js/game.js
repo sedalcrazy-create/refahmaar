@@ -27,7 +27,7 @@ socket.on('disconnect', () => {
 
 let pixiRenderer = null; // PixiJS renderer instance
 let boardWidth, boardHeight;
-let squareSize = 15; // Increased from 10 for better visibility
+let squareSize = 50; // Increased from 10 for better visibility
 let currentPlayer = null;
 let baleUserData = null;
 
@@ -47,18 +47,37 @@ let interpolatedPositions = new Map();
 // Game state tracking
 let gameStartTime = 0;
 let isGameActive = false;
+let timerInterval = null;
+const GAME_DURATION = 180; // 3 minutes in seconds
 
 // Initialize game
-// Initialize Bale SDK
+// Initialize Bale SDK with URL hash fallback
 function initBale() {
     try {
-        // Check for BaleWebApp global object
-        if (typeof BaleWebApp !== 'undefined' && BaleWebApp) {
-            BaleWebApp.ready();
-            BaleWebApp.expand();
+        console.log('initBale: Starting...');
 
-            // Get user data from Bale
-            const initData = BaleWebApp.initDataUnsafe;
+        // Method 1: Try Bale SDK (multiple possible names)
+        let sdk = null;
+        if (typeof BaleWebApp !== 'undefined' && BaleWebApp) {
+            sdk = BaleWebApp;
+            console.log('initBale: Found BaleWebApp');
+        } else if (window.Bale && window.Bale.WebApp) {
+            sdk = window.Bale.WebApp;
+            console.log('initBale: Found window.Bale.WebApp');
+        } else if (window.BaleWebApp) {
+            sdk = window.BaleWebApp;
+            console.log('initBale: Found window.BaleWebApp');
+        }
+
+        if (sdk) {
+            try {
+                sdk.ready();
+                if (sdk.expand) sdk.expand();
+            } catch(e) { console.log('SDK ready/expand error:', e); }
+
+            const initData = sdk.initDataUnsafe || sdk.initData;
+            console.log('initBale: SDK initData:', JSON.stringify(initData));
+            
             if (initData && initData.user) {
                 baleUserData = {
                     baleUserId: String(initData.user.id),
@@ -66,14 +85,61 @@ function initBale() {
                     firstName: initData.user.first_name || '',
                     lastName: initData.user.last_name || ''
                 };
-
-                console.log('Bale user data:', baleUserData);
+                console.log('initBale: User from SDK:', baleUserData.baleUserId);
+                return;
             }
-        } else {
-            console.log('BaleWebApp not available - running in browser mode');
         }
+
+        // Method 2: Parse URL hash (Bale passes data as tgWebAppData in hash)
+        const hash = window.location.hash;
+        const fullUrl = window.location.href;
+        console.log('initBale: Full URL:', fullUrl);
+        console.log('initBale: Hash:', hash);
+
+        if (hash && hash.includes('tgWebAppData')) {
+            try {
+                const hashParams = new URLSearchParams(hash.substring(1));
+                const tgWebAppData = hashParams.get('tgWebAppData');
+
+                if (tgWebAppData) {
+                    const dataParams = new URLSearchParams(decodeURIComponent(tgWebAppData));
+                    const userJson = dataParams.get('user');
+
+                    if (userJson) {
+                        const user = JSON.parse(decodeURIComponent(userJson));
+                        baleUserData = {
+                            baleUserId: String(user.id),
+                            phoneNumber: user.phone_number || '',
+                            firstName: user.first_name || '',
+                            lastName: user.last_name || ''
+                        };
+                        console.log('initBale: User from URL:', baleUserData.baleUserId);
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.error('initBale: URL parsing error:', e);
+            }
+        }
+
+        console.log('initBale: No user data found');
     } catch (error) {
-        console.error('Error initializing Bale SDK:', error);
+        console.error('initBale: Error:', error);
+    }
+}
+
+// Show registration required message
+function showRegistrationRequired() {
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+        loginForm.style.display = 'none';
+    }
+    const errorMessage = document.getElementById('error-message');
+    if (errorMessage) {
+        const debugInfo = 'Debug: ' + (window.location.hash ? 'hash found' : 'no hash');
+        errorMessage.innerHTML = '<div style="text-align:center;padding:20px;"><p style="font-size:18px;color:#e74c3c;margin-bottom:15px;">ابتدا باید ثبت‌نام کنید!</p><p style="font-size:14px;color:#fff;">برای ثبت‌نام به ربات بله برگردید و دستور /start را ارسال کنید.</p><p style="font-size:10px;color:#888;margin-top:10px;">' + debugInfo + '</p></div>';
+        errorMessage.classList.add('show');
+        errorMessage.style.display = 'block';
     }
 }
 
@@ -82,6 +148,7 @@ function checkUserStatus() {
     if (!baleUserData || !baleUserData.baleUserId) {
         console.log('No Bale user data - showing full registration form');
         userStatus = 'new';
+        showRegistrationRequired();
         return;
     }
 
@@ -95,6 +162,7 @@ function checkUserStatus() {
         if (response && response.success) {
             if (response.needsRegistration) {
                 userStatus = 'new';
+        showRegistrationRequired();
                 console.log('User not found - showing full registration form');
             } else if (response.user) {
                 if (response.user.first_name === 'pending' || response.user.last_name === 'pending') {
@@ -131,6 +199,26 @@ function startGame(firstName, lastName) {
     document.getElementById('player-name').textContent = firstName + ' ' + lastName;
 }
 
+// Update timer display
+function updateTimer() {
+    if (!isGameActive) return;
+    
+    const elapsed = Math.floor((Date.now() - gameStartTime) / 1000);
+    const remaining = Math.max(0, GAME_DURATION - elapsed);
+    
+    const minutes = Math.floor(remaining / 60);
+    const seconds = remaining % 60;
+    const timerEl = document.getElementById('game-timer');
+    if (timerEl) {
+        timerEl.textContent = String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+    }
+    
+    if (remaining <= 0) {
+        // Time is up - end game
+        socket.emit('time-up');
+    }
+}
+
 // Actually begin gameplay
 function beginGame() {
     const startOverlay = document.getElementById('start-overlay');
@@ -141,6 +229,12 @@ function beginGame() {
     currentDirection = { x: 1, y: 0 }; // Reset direction (snake starts moving right)
 
     // Join the actual game
+    // Start timer
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(updateTimer, 1000);
+    updateTimer();
+
+    // Join the actual game
     socket.emit('join', {
         baleUserId: baleUserData ? baleUserData.baleUserId : null,
         name: document.getElementById('player-name').textContent
@@ -149,6 +243,11 @@ function beginGame() {
 
 // Show game over screen
 function showGameOver(score) {
+    // Stop timer
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
     isGameActive = false;
     const gameOverlay = document.getElementById('gameover-overlay');
     const gameTime = Math.floor((Date.now() - gameStartTime) / 1000);
@@ -323,7 +422,13 @@ function init() {
                     document.getElementById('player-name').textContent = firstName + ' ' + lastName;
 
                     // Join the game
-                    socket.emit('join', {
+                    // Start timer
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(updateTimer, 1000);
+    updateTimer();
+
+    // Join the actual game
+    socket.emit('join', {
                         baleUserId: baleUserData.baleUserId,
                         name: firstName + ' ' + lastName
                     });
@@ -349,7 +454,13 @@ function init() {
                     document.getElementById('player-name').textContent = firstName + ' ' + lastName;
 
                     // Join the game
-                    socket.emit('join', {
+                    // Start timer
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(updateTimer, 1000);
+    updateTimer();
+
+    // Join the actual game
+    socket.emit('join', {
                         baleUserId: baleUserData.baleUserId,
                         name: firstName + ' ' + lastName
                     });
@@ -447,7 +558,7 @@ function init() {
                 color: getPlayerColor(p.id)
             })) : [],
             food: data.food ? data.food.map(f => ({
-                coordinate: { x: f.x, y: f.y },
+                x: f.x, y: f.y,
                 emoji: f.emoji
             })) : []
         };
@@ -468,6 +579,28 @@ function init() {
         if (data.id === currentPlayer?.playerId) {
             showGameOver(data.score);
         }
+    });
+
+    // Handle game limit reached (user played 3 times)
+    socket.on('game-limit-reached', (data) => {
+        console.log('Game limit reached:', data);
+        isGameActive = false;
+
+        const gameScreen = document.getElementById('game-screen');
+        const loginScreen = document.getElementById('login-screen');
+
+        if (gameScreen) gameScreen.classList.add('hidden');
+        if (loginScreen) loginScreen.classList.remove('hidden');
+
+        let overlay = document.getElementById('limit-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'limit-overlay';
+            overlay.className = 'game-overlay';
+            overlay.innerHTML = '<div class="overlay-content" style="text-align:center;background:linear-gradient(145deg, rgba(139,0,0,0.98), rgba(60,8,20,0.99));padding:40px;border-radius:20px;border:2px solid #FFD700;"><h1 style="font-size:2rem;color:#FFD700;margin-bottom:20px;">🎮 بازی‌های شما تمام شد!</h1><p style="font-size:1.2rem;color:#fff;margin-bottom:15px;">شما ۳ بار بازی کرده‌اید</p><p style="font-size:1rem;color:#ccc;margin-bottom:20px;">منتظر اعلام نتایج مسابقه باشید</p><p style="font-size:0.9rem;color:#FFD700;">🏆 موفق باشید!</p></div>';
+            document.body.appendChild(overlay);
+        }
+        overlay.classList.remove('hidden');
     });
 }
 

@@ -31,7 +31,7 @@ class PixiSnakeRenderer {
         // Interpolation state tracking
         this.interpolationData = new Map(); // playerId -> segment interpolation data
         this.lastServerUpdate = 0;
-        this.serverTickInterval = 100; // 10 FPS = 100ms between server updates
+        this.serverTickInterval = 83; // 10 FPS = 100ms between server updates
 
         // Textures cache
         this.textures = {};
@@ -222,10 +222,10 @@ class PixiSnakeRenderer {
                     text: displayName,
                     style: {
                         fontFamily: 'IranSans, Arial',
-                        fontSize: 10,
+                        fontSize: 24,
                         fontWeight: 'bold',
                         fill: 0xffffff,
-                        stroke: { color: 0x000000, width: 3 }
+                        stroke: { color: 0x000000, width: 5 }
                     }
                 });
                 label.anchor.set(0.5, 1);
@@ -414,7 +414,7 @@ class PixiSnakeRenderer {
                 // Update player name label position (follow head)
                 if (index === 0 && label) {
                     label.x = segment.x;
-                    label.y = segment.y - 8;
+                    label.y = segment.y - 15;
                 }
             });
         });
