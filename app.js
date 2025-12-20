@@ -11,7 +11,13 @@ const GameController = require('./app/controllers/game-controller');
 const userService = require('./database/userService');
 
 // Middleware
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+    setHeaders: (res) => {
+        res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+        res.set('Pragma', 'no-cache');
+        res.set('Expires', '0');
+    }
+}));
 app.use(express.json());
 
 // Routes
