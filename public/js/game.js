@@ -197,6 +197,29 @@ function startGame(firstName, lastName) {
     gameScreen.classList.remove('hidden');
     startOverlay.classList.remove('hidden');
     document.getElementById('player-name').textContent = firstName + ' ' + lastName;
+    
+    // Start countdown for rules reading
+    startRulesCountdown();
+}
+
+// Countdown timer for reading rules before starting
+function startRulesCountdown() {
+    const startBtn = document.getElementById('start-game-btn');
+    let countdown = 5;
+    
+    startBtn.disabled = true;
+    startBtn.textContent = 'لطفاً قوانین را بخوانید... (' + countdown + ')';
+    
+    const countdownInterval = setInterval(() => {
+        countdown--;
+        if (countdown > 0) {
+            startBtn.textContent = 'لطفاً قوانین را بخوانید... (' + countdown + ')';
+        } else {
+            startBtn.textContent = 'شروع بازی';
+            startBtn.disabled = false;
+            clearInterval(countdownInterval);
+        }
+    }, 1000);
 }
 
 // Update timer display
@@ -417,21 +440,8 @@ function init() {
 
                 if (response.success) {
                     console.log('Names updated successfully');
-                    loginScreen.classList.add('hidden');
-                    gameScreen.classList.remove('hidden');
-                    document.getElementById('player-name').textContent = firstName + ' ' + lastName;
-
-                    // Join the game
-                    // Start timer
-    if (timerInterval) clearInterval(timerInterval);
-    timerInterval = setInterval(updateTimer, 1000);
-    updateTimer();
-
-    // Join the actual game
-    socket.emit('join', {
-                        baleUserId: baleUserData.baleUserId,
-                        name: firstName + ' ' + lastName
-                    });
+                    // Use startGame to show overlay, user clicks to begin
+                    startGame(firstName, lastName);
                 } else {
                     showError('خطا در بروزرسانی اطلاعات: ' + (response.error || 'خطای نامشخص'));
                 }
@@ -449,21 +459,8 @@ function init() {
 
                 if (response.success) {
                     console.log('Registration successful');
-                    loginScreen.classList.add('hidden');
-                    gameScreen.classList.remove('hidden');
-                    document.getElementById('player-name').textContent = firstName + ' ' + lastName;
-
-                    // Join the game
-                    // Start timer
-    if (timerInterval) clearInterval(timerInterval);
-    timerInterval = setInterval(updateTimer, 1000);
-    updateTimer();
-
-    // Join the actual game
-    socket.emit('join', {
-                        baleUserId: baleUserData.baleUserId,
-                        name: firstName + ' ' + lastName
-                    });
+                    // Use startGame to show overlay, user clicks to begin
+                    startGame(firstName, lastName);
                 } else {
                     showError('خطا در ثبت‌نام: ' + (response.error || 'خطای نامشخص'));
                 }

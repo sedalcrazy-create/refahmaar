@@ -1087,7 +1087,7 @@ n/* Floating Yalda Fruits */
     justify-content: center;
     width: 100vw;
     height: 100vh;
-    padding: 60px 10px 80px 10px;
+    padding: 50px 5px 60px 5px;
     position: absolute;
     top: 0;
     left: 0;
@@ -1096,9 +1096,12 @@ n/* Floating Yalda Fruits */
 #game-canvas {
     max-width: 100%;
     max-height: 100%;
+    width: auto;
+    height: auto;
     border: 3px solid var(--yalda-gold);
     border-radius: 10px;
     box-shadow: 0 0 30px rgba(220, 20, 60, 0.5);
+    object-fit: contain;
 }
 
 .game-controls {
@@ -1169,7 +1172,7 @@ n/* Floating Yalda Fruits */
 
 @media (max-width: 768px) {
     .game-container {
-        padding: 70px 5px 80px 5px;
+        padding: 45px 3px 55px 3px;
     }
 
     .score {
@@ -1186,7 +1189,7 @@ n/* Floating Yalda Fruits */
 
 @media (max-width: 768px) and (orientation: landscape) {
     .game-container {
-        padding: 50px 5px 50px 5px;
+        padding: 40px 3px 40px 3px;
     }
 
     .game-hud {

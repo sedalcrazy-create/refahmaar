@@ -1,0 +1,102 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: yalda_snake_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-yalda_snake}
+      POSTGRES_USER: ${POSTGRES_USER:-snake_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_this_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - yalda_network
+    # PostgreSQL tuning for 10K users
+    command:
+      - "postgres"
+      - "-c"
+      - "max_connections=500"
+      - "-c"
+      - "shared_buffers=4GB"
+      - "-c"
+      - "effective_cache_size=12GB"
+      - "-c"
+      - "work_mem=64MB"
+      - "-c"
+      - "maintenance_work_mem=512MB"
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+        reservations:
+          memory: 4G
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-snake_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: yalda_snake_app
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3001}:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=${POSTGRES_DB:-yalda_snake}
+      - POSTGRES_USER=${POSTGRES_USER:-snake_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-change_this_password}
+      - MAX_PLAYERS=10
+      - GAME_SPEED=10
+      - BOARD_WIDTH=100
+      - BOARD_HEIGHT=60
+      - ROOM_CAPACITY=10
+      - DB_POOL_SIZE=100
+      # Node.js tuning
+      - NODE_OPTIONS=--max-old-space-size=16384
+      - UV_THREADPOOL_SIZE=16
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - yalda_network
+    deploy:
+      resources:
+        limits:
+          memory: 20G
+        reservations:
+          memory: 8G
+    # Increase ulimits for 10K connections
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+
+  bot:
+    build: ./bot
+    container_name: yalda_snake_bot
+    restart: unless-stopped
+    environment:
+      - BALE_BOT_TOKEN=${BALE_BOT_TOKEN:-64658763:rgYSwBxd05vEuuuNNbNNYZdtA-T1Gxdx5nw}
+      - GAME_URL=${GAME_URL:-https://snake.darmanjoo.ir}
+      - API_URL=http://app:3001
+      - CHANNEL_ID=${CHANNEL_ID:-@your_channel}
+    depends_on:
+      - app
+    networks:
+      - yalda_network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  yalda_network:
+    driver: bridge

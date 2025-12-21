@@ -30,8 +30,6 @@ class PixiSnakeRenderer {
 
         // Interpolation state tracking
         this.interpolationData = new Map(); // playerId -> segment interpolation data
-        this.lastServerUpdate = 0;
-        this.serverTickInterval = 83; // 10 FPS = 100ms between server updates
 
         // Textures cache
         this.textures = {};
@@ -112,11 +110,12 @@ class PixiSnakeRenderer {
         this.textures.watermelon = createWatermelonTexture(this.app.renderer);
         this.textures.pomegranate = createPomegranateTexture(this.app.renderer);
         this.textures.apple = createAppleTexture(this.app.renderer);
+        this.textures.grape = createGrapeTexture(this.app.renderer);
 
         // Map food emojis to textures
         this.emojiToTexture = {
             '🍉': this.textures.watermelon,
-            '🍇': this.textures.pomegranate,
+            '🍇': this.textures.grape,
             '🍎': this.textures.apple,
             '🍊': this.textures.apple,
             '🍋': this.textures.apple,
@@ -204,7 +203,6 @@ class PixiSnakeRenderer {
      */
     updatePlayers(players) {
         const now = Date.now();
-        this.lastServerUpdate = now;
 
         players.forEach(player => {
             // Get or create player container
@@ -222,7 +220,7 @@ class PixiSnakeRenderer {
                     text: displayName,
                     style: {
                         fontFamily: 'IranSans, Arial',
-                        fontSize: 24,
+                        fontSize: 36,
                         fontWeight: 'bold',
                         fill: 0xffffff,
                         stroke: { color: 0x000000, width: 5 }
@@ -256,20 +254,24 @@ class PixiSnakeRenderer {
 
             player.segments.forEach((serverPos, index) => {
                 if (!interpolation[index]) {
-                    // First time seeing this segment
+                    // First time seeing this segment - no interpolation needed
                     interpolation[index] = {
-                        previous: { ...serverPos },
-                        target: { ...serverPos },
+                        previous: { x: serverPos.x, y: serverPos.y },
+                        target: { x: serverPos.x, y: serverPos.y },
                         lastUpdate: now
                     };
+                    // Set sprite position immediately
+                    if (segments[index]) {
+                        segments[index].x = serverPos.x * this.squareSize + this.squareSize / 2;
+                        segments[index].y = serverPos.y * this.squareSize + this.squareSize / 2;
+                    }
                 } else {
-                    // Store current sprite position as previous, update target
-                    const currentSprite = segments[index];
+                    // Use OLD target as new previous (not sprite position - avoids conversion errors)
                     interpolation[index].previous = {
-                        x: currentSprite.x / this.squareSize,
-                        y: currentSprite.y / this.squareSize
+                        x: interpolation[index].target.x,
+                        y: interpolation[index].target.y
                     };
-                    interpolation[index].target = { ...serverPos };
+                    interpolation[index].target = { x: serverPos.x, y: serverPos.y };
                     interpolation[index].lastUpdate = now;
                 }
             });
@@ -327,8 +329,8 @@ class PixiSnakeRenderer {
                 sprite.x = food.x * this.squareSize + this.squareSize / 2;
                 sprite.y = food.y * this.squareSize + this.squareSize / 2;
 
-                // Scale texture to fit (32px texture -> squareSize)
-                sprite.scale.set(this.squareSize / 32);
+                // Scale texture to fit (larger for better visibility)
+                sprite.scale.set(this.squareSize / 20);
 
                 this.layers.food.addChild(sprite);
                 this.foodSprites.set(key, { sprite, data: food });
@@ -375,10 +377,8 @@ class PixiSnakeRenderer {
             playerData.forEach((segmentData, index) => {
                 const segment = segments[index];
                 const elapsed = now - segmentData.lastUpdate;
-                const progress = Math.min(elapsed / this.serverTickInterval, 1);
-
-                // Ease-out quadratic easing for smooth arrival
-                const eased = 1 - Math.pow(1 - progress, 2);
+                // Use fixed server tick interval (100ms = 10 FPS)
+                let progress = elapsed / 100;
 
                 // Handle grid wrapping for interpolation
                 let targetX = segmentData.target.x;
@@ -403,13 +403,21 @@ class PixiSnakeRenderer {
                     }
                 }
 
-                // Linear interpolation between previous and target
-                const interpolatedX = prevX + (targetX - prevX) * eased;
-                const interpolatedY = prevY + (targetY - prevY) * eased;
+                let interpolatedX, interpolatedY;
 
-                // Convert grid coordinates to screen coordinates
-                segment.x = (interpolatedX % this.boardWidth) * this.squareSize + this.squareSize / 2;
-                segment.y = (interpolatedY % this.boardHeight) * this.squareSize + this.squareSize / 2;
+                // Clamp progress to avoid overshooting
+                const clampedProgress = Math.min(progress, 1);
+
+                // Simple linear interpolation (most reliable)
+                interpolatedX = prevX + (targetX - prevX) * clampedProgress;
+                interpolatedY = prevY + (targetY - prevY) * clampedProgress;
+
+                // Convert grid coordinates to screen coordinates with proper wrapping
+                const finalX = ((interpolatedX % this.boardWidth) + this.boardWidth) % this.boardWidth;
+                const finalY = ((interpolatedY % this.boardHeight) + this.boardHeight) % this.boardHeight;
+
+                segment.x = finalX * this.squareSize + this.squareSize / 2;
+                segment.y = finalY * this.squareSize + this.squareSize / 2;
 
                 // Update player name label position (follow head)
                 if (index === 0 && label) {

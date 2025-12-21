@@ -20,11 +20,20 @@ CREATE TABLE IF NOT EXISTS leaderboard (
     score INTEGER NOT NULL DEFAULT 0,
     game_duration INTEGER DEFAULT 0, -- in seconds
     snake_length INTEGER DEFAULT 3,
+    kills INTEGER DEFAULT 0,
     game_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, game_date)
 );
 
--- Create high scores view (only best score per user)
+-- Add kills column if not exists (for existing databases)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'leaderboard' AND column_name = 'kills') THEN
+        ALTER TABLE leaderboard ADD COLUMN kills INTEGER DEFAULT 0;
+    END IF;
+END $$;
+
+-- Create high scores view (aggregated stats per user)
 CREATE OR REPLACE VIEW high_scores AS
 SELECT
     u.id,
@@ -32,8 +41,10 @@ SELECT
     u.first_name,
     u.last_name,
     u.employee_code,
-    MAX(l.score) as high_score,
-    MAX(l.snake_length) as max_length,
+    COALESCE(SUM(l.score), 0) as high_score,
+    COALESCE(SUM(l.snake_length), 0) as total_length,
+    COALESCE(SUM(l.kills), 0) as total_kills,
+    COUNT(l.id) as games_played,
     MAX(l.game_date) as last_played
 FROM users u
 LEFT JOIN leaderboard l ON u.id = l.user_id

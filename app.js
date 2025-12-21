@@ -94,13 +94,14 @@ app.get('/api/user/:baleUserId/stats', async (req, res) => {
 
         const rank = await userService.getUserRank(user.id);
 
-        // Get user's game stats
+        // Get user's game stats (SUM of all games)
         const db = require('./database/db');
         const statsQuery = `
             SELECT
                 COUNT(*) as games_played,
-                MAX(score) as high_score,
-                MAX(snake_length) as max_length
+                COALESCE(SUM(score), 0) as total_score,
+                COALESCE(SUM(snake_length), 0) as total_length,
+                COALESCE(SUM(kills), 0) as total_kills
             FROM leaderboard
             WHERE user_id = $1
         `;
@@ -112,8 +113,9 @@ app.get('/api/user/:baleUserId/stats', async (req, res) => {
             first_name: user.first_name,
             last_name: user.last_name,
             employee_code: user.employee_code,
-            high_score: stats.high_score || 0,
-            max_length: stats.max_length || 0,
+            high_score: parseInt(stats.total_score) || 0,
+            max_length: parseInt(stats.total_length) || 0,
+            total_kills: parseInt(stats.total_kills) || 0,
             games_played: parseInt(stats.games_played) || 0,
             rank: rank
         });
@@ -204,6 +206,108 @@ io.on('connection', (socket) => {
 // Create the main game controller
 const gameController = new GameController();
 gameController.listen(io);
+
+// Server start time for uptime calculation
+const serverStartTime = Date.now();
+
+// Peak tracking
+let peakOnlinePlayers = 0;
+let peakTime = null;
+const playerHistory = []; // Last 60 data points (5 min at 5s intervals)
+
+// Update peak every 5 seconds
+setInterval(() => {
+    const stats = gameController.getStats();
+    if (stats.onlinePlayers > peakOnlinePlayers) {
+        peakOnlinePlayers = stats.onlinePlayers;
+        peakTime = new Date().toISOString();
+    }
+    // Add to history (keep last 60 points = 5 minutes)
+    playerHistory.push({
+        time: Date.now(),
+        count: stats.onlinePlayers
+    });
+    if (playerHistory.length > 60) playerHistory.shift();
+}, 5000);
+
+// Admin monitoring API
+app.get('/api/admin/stats', async (req, res) => {
+    try {
+        const gameStats = gameController.getStats();
+        const memUsage = process.memoryUsage();
+
+        // Get total users from DB (cached query - runs fast)
+        const db = require('./database/db');
+        const totalUsersResult = await db.query('SELECT COUNT(*) as count FROM users');
+        const totalGamesResult = await db.query('SELECT COUNT(*) as count FROM leaderboard');
+
+        // Get records (max score, kills, length)
+        const recordsResult = await db.query(`
+            SELECT
+                COALESCE(MAX(high_score), 0) as max_score,
+                COALESCE(MAX(total_kills), 0) as max_kills,
+                COALESCE(MAX(total_length), 0) as max_length
+            FROM high_scores
+        `);
+        const records = recordsResult.rows[0];
+
+        // Get top 100 players
+        const top100Result = await db.query(`
+            SELECT
+                first_name,
+                last_name,
+                employee_code,
+                high_score,
+                total_length,
+                total_kills,
+                games_played
+            FROM high_scores
+            WHERE high_score IS NOT NULL
+            ORDER BY high_score DESC, total_length DESC
+            LIMIT 100
+        `);
+
+        res.json({
+            server: {
+                uptime: Math.floor((Date.now() - serverStartTime) / 1000),
+                memory: {
+                    used: Math.round(memUsage.heapUsed / 1024 / 1024),
+                    total: Math.round(memUsage.heapTotal / 1024 / 1024)
+                },
+                nodeVersion: process.version
+            },
+            game: {
+                onlinePlayers: gameStats.onlinePlayers,
+                activePlayers: gameStats.activePlayers,
+                foodCount: gameStats.foodCount,
+                players: gameStats.players
+            },
+            peak: {
+                count: peakOnlinePlayers,
+                time: peakTime
+            },
+            totals: {
+                users: parseInt(totalUsersResult.rows[0].count),
+                games: parseInt(totalGamesResult.rows[0].count)
+            },
+            records: {
+                maxScore: parseInt(records.max_score) || 0,
+                maxKills: parseInt(records.max_kills) || 0,
+                maxLength: parseInt(records.max_length) || 0
+            },
+            top100: top100Result.rows,
+            history: playerHistory.map(p => ({ t: p.time, c: p.count }))
+        });
+    } catch (error) {
+        console.error('Admin stats error:', error);
+        res.status(500).json({ error: 'Failed to get stats' });
+    }
+});
+
+// Admin panel page
+app.get('/admin', (req, res) => {
+    res.sendFile('admin.html', { root: path.join(__dirname, 'public') });
+});
 
 const SERVER_PORT = process.env.PORT || 3001;
 app.set('port', SERVER_PORT);

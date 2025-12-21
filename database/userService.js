@@ -87,11 +87,13 @@ class UserService {
                 last_name,
                 employee_code,
                 high_score,
-                max_length,
+                total_length as max_length,
+                total_kills,
+                games_played,
                 last_played
             FROM high_scores
             WHERE high_score IS NOT NULL
-            ORDER BY high_score DESC
+            ORDER BY high_score DESC, total_length DESC
             LIMIT $1
         `;
 

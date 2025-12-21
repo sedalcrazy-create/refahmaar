@@ -107,4 +107,47 @@ function createAppleTexture(renderer) {
     return renderer.generateTexture(graphics);
 }
 
+
+/**
+ * Create grape sprite texture
+ * @param {PIXI.Renderer} renderer - PixiJS renderer
+ * @returns {PIXI.Texture} Grape texture
+ */
+function createGrapeTexture(renderer) {
+    const graphics = new PIXI.Graphics();
+    const size = 32;
+    const center = size / 2;
+
+    // Purple grapes cluster - main grapes
+    const grapePositions = [
+        { x: center - 4, y: center - 4 },
+        { x: center + 4, y: center - 4 },
+        { x: center, y: center - 6 },
+        { x: center - 6, y: center + 2 },
+        { x: center + 6, y: center + 2 },
+        { x: center, y: center + 4 },
+        { x: center - 3, y: center + 6 },
+        { x: center + 3, y: center + 6 }
+    ];
+
+    grapePositions.forEach(pos => {
+        // Dark purple base
+        graphics.circle(pos.x, pos.y, 5);
+        graphics.fill({ color: 0x6B2D7B });
+        // Light purple highlight
+        graphics.circle(pos.x - 1, pos.y - 1, 2);
+        graphics.fill({ color: 0x9B4DCA, alpha: 0.6 });
+    });
+
+    // Green stem
+    graphics.rect(center - 1, center - size / 2 + 2, 2, 6);
+    graphics.fill({ color: 0x228B22 });
+
+    // Small leaf
+    graphics.ellipse(center + 4, center - size / 2 + 4, 4, 2);
+    graphics.fill({ color: 0x32CD32 });
+
+    return renderer.generateTexture(graphics);
+}
+
 console.log('Asset generator loaded');

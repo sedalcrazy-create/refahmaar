@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>پنل مانیتورینگ - چالش یلدایی</title>
+    <style>
+        @font-face {
+            font-family: 'IranSans';
+            src: url('fonts/iran_sans.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        :root {
+            --yalda-red: #8B0000;
+            --yalda-crimson: #DC143C;
+            --yalda-dark-red: #B22222;
+            --yalda-gold: #FFD700;
+            --yalda-orange: #FF8C00;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'IranSans', Tahoma, Arial, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            direction: rtl;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        /* ==================== YALDA BACKGROUND ==================== */
+        .yalda-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 30% 50%, rgba(220, 20, 60, 0.3) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 70%, rgba(139, 0, 0, 0.3) 0%, transparent 50%),
+                        radial-gradient(circle at 50% 30%, rgba(255, 215, 0, 0.2) 0%, transparent 50%),
+                        linear-gradient(135deg, #3d0814 0%, #8B0000 25%, #DC143C 50%, #8B0000 75%, #3d0814 100%);
+            background-size: 200% 200%;
+            animation: bgShift 20s ease infinite;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        @keyframes bgShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        /* Decorative Shapes */
+        .decorative-shapes {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .shape {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.3;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .shape-1 {
+            width: 300px;
+            height: 300px;
+            background: linear-gradient(135deg, var(--yalda-crimson), var(--yalda-gold));
+            top: -10%;
+            right: -5%;
+            animation-duration: 25s;
+        }
+
+        .shape-2 {
+            width: 250px;
+            height: 250px;
+            background: linear-gradient(135deg, var(--yalda-gold), var(--yalda-orange));
+            bottom: -10%;
+            left: -5%;
+            animation-duration: 30s;
+            animation-delay: -10s;
+        }
+
+        .shape-3 {
+            width: 200px;
+            height: 200px;
+            background: linear-gradient(135deg, var(--yalda-orange), var(--yalda-crimson));
+            top: 40%;
+            left: 50%;
+            animation-duration: 35s;
+            animation-delay: -20s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(40px, -40px) rotate(120deg); }
+            66% { transform: translate(-40px, 40px) rotate(240deg); }
+        }
+
+        /* Snowfall */
+        .snowfall {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .snowflake {
+            position: absolute;
+            top: -10px;
+            color: rgba(255, 255, 255, 0.8);
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+            animation: snowfall linear infinite;
+            user-select: none;
+        }
+
+        @keyframes snowfall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(360deg); opacity: 0.3; }
+        }
+
+        /* Floating Fruits */
+        .floating-fruits {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .yalda-fruit {
+            position: absolute;
+            font-size: 40px;
+            opacity: 0.5;
+            animation: fruitFloat 15s ease-in-out infinite;
+            filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));
+        }
+
+        .yalda-fruit:nth-child(1) { left: 15%; top: 20%; animation-delay: 0s; animation-duration: 14s; }
+        .yalda-fruit:nth-child(2) { left: 75%; top: 15%; animation-delay: 2s; animation-duration: 16s; }
+        .yalda-fruit:nth-child(3) { left: 25%; top: 70%; animation-delay: 4s; animation-duration: 15s; }
+        .yalda-fruit:nth-child(4) { left: 80%; top: 65%; animation-delay: 1s; animation-duration: 17s; }
+
+        @keyframes fruitFloat {
+            0%, 100% { transform: translateY(0) rotate(0deg) scale(1); opacity: 0.4; }
+            50% { transform: translateY(-30px) rotate(-10deg) scale(1.1); opacity: 0.6; }
+        }
+
+        /* ==================== CONTAINER ==================== */
+        .container {
+            position: relative;
+            z-index: 10;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px 15px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ==================== HEADER ==================== */
+        .header {
+            background: linear-gradient(145deg, rgba(139, 0, 0, 0.95), rgba(80, 10, 25, 0.98));
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 25px 20px;
+            text-align: center;
+            border: 2px solid rgba(255, 215, 0, 0.4);
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3),
+                        0 0 60px rgba(220, 20, 60, 0.2);
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, #FFD700, #FFA500, #FFD700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #ddd;
+            font-size: 0.9rem;
+        }
+
+        .live-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: #4CAF50;
+            border-radius: 50%;
+            margin-right: 5px;
+            animation: pulse 1.5s infinite;
+            box-shadow: 0 0 10px #4CAF50;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.9); }
+        }
+
+        /* ==================== STATS GRID ==================== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(145deg, rgba(139, 0, 0, 0.9), rgba(80, 10, 25, 0.95));
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(220, 20, 60, 0.4);
+            border-radius: 16px;
+            padding: 20px 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--yalda-gold);
+            box-shadow: 0 8px 25px rgba(255, 215, 0, 0.2);
+        }
+
+        .stat-card .icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.5));
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-card .label {
+            color: #ccc;
+            font-size: 0.85rem;
+            margin-top: 5px;
+        }
+
+        /* ==================== PANELS ==================== */
+        .panel {
+            background: linear-gradient(145deg, rgba(139, 0, 0, 0.9), rgba(80, 10, 25, 0.95));
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(220, 20, 60, 0.4);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+
+        .panel h3 {
+            color: var(--yalda-gold);
+            font-size: 1rem;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(220, 20, 60, 0.4);
+        }
+
+        /* Records Grid */
+        .records-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .record-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px 10px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid rgba(220, 20, 60, 0.3);
+        }
+
+        .record-item .record-label {
+            font-size: 0.8rem;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+
+        .record-item .record-value {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--yalda-gold);
+        }
+
+        /* ==================== PLAYERS TABLE ==================== */
+        .table-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            min-width: 280px;
+        }
+
+        th, td {
+            padding: 12px 8px;
+            text-align: center;
+            border-bottom: 1px solid rgba(220, 20, 60, 0.3);
+        }
+
+        th {
+            background: rgba(0, 0, 0, 0.3);
+            color: var(--yalda-gold);
+            font-weight: bold;
+            font-size: 0.85rem;
+        }
+
+        tr:hover td {
+            background: rgba(139, 0, 0, 0.3);
+        }
+
+        .status-alive { color: #4CAF50; }
+        .status-dead { color: #f44336; }
+
+        .no-data {
+            text-align: center;
+            padding: 30px;
+            color: #888;
+        }
+
+        /* Rank badges */
+        .rank-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 0.85rem;
+        }
+
+        .rank-1 {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #000;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        .rank-2 {
+            background: linear-gradient(135deg, #C0C0C0, #E8E8E8);
+            color: #333;
+            box-shadow: 0 0 8px rgba(192, 192, 192, 0.5);
+        }
+
+        .rank-3 {
+            background: linear-gradient(135deg, #CD7F32, #E8A87C);
+            color: #fff;
+            box-shadow: 0 0 8px rgba(205, 127, 50, 0.5);
+        }
+
+        .rank-other {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ccc;
+        }
+
+        tr.top-3 td {
+            background: rgba(255, 215, 0, 0.1);
+        }
+
+        /* ==================== REFRESH BADGE ==================== */
+        .refresh-badge {
+            position: fixed;
+            bottom: 15px;
+            left: 15px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px 15px;
+            border-radius: 25px;
+            font-size: 0.75rem;
+            color: #aaa;
+            border: 1px solid var(--yalda-crimson);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+
+        /* ==================== RESPONSIVE ==================== */
+        @media (max-width: 400px) {
+            .container {
+                padding: 15px 10px;
+            }
+
+            .header {
+                padding: 20px 15px;
+            }
+
+            .header h1 {
+                font-size: 1.3rem;
+            }
+
+            .stat-card {
+                padding: 15px 10px;
+            }
+
+            .stat-card .icon {
+                font-size: 1.6rem;
+            }
+
+            .stat-card .value {
+                font-size: 1.6rem;
+            }
+
+            .stat-card .label {
+                font-size: 0.75rem;
+            }
+
+            .record-item .record-value {
+                font-size: 1.2rem;
+            }
+
+            table {
+                font-size: 0.8rem;
+            }
+
+            th, td {
+                padding: 10px 5px;
+            }
+        }
+
+        @media (min-width: 600px) {
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Yalda Background -->
+    <div class="yalda-background">
+        <div class="snowfall"></div>
+        <div class="decorative-shapes">
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+            <div class="shape shape-3"></div>
+        </div>
+        <div class="floating-fruits">
+            <span class="yalda-fruit">🍉</span>
+            <span class="yalda-fruit">🍇</span>
+            <span class="yalda-fruit">🍉</span>
+            <span class="yalda-fruit">🍇</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>🎮 پنل مانیتورینگ چالش یلدایی</h1>
+            <p><span class="live-dot"></span> اداره کل رفاه و درمان</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="icon">👥</div>
+                <div class="value" id="online-players">0</div>
+                <div class="label">آنلاین</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">🎮</div>
+                <div class="value" id="active-players">0</div>
+                <div class="label">در حال بازی</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">👤</div>
+                <div class="value" id="total-users">0</div>
+                <div class="label">کل کاربران</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">🏆</div>
+                <div class="value" id="total-games">0</div>
+                <div class="label">کل بازی‌ها</div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>📈 آمار سرور</h3>
+            <div class="records-grid">
+                <div class="record-item">
+                    <div class="record-label">اوج همزمان</div>
+                    <div class="record-value" id="peak-players">0</div>
+                </div>
+                <div class="record-item">
+                    <div class="record-label">بیشترین امتیاز</div>
+                    <div class="record-value" id="max-score">0</div>
+                </div>
+                <div class="record-item">
+                    <div class="record-label">بیشترین کشتار</div>
+                    <div class="record-value" id="max-kills">0</div>
+                </div>
+                <div class="record-item">
+                    <div class="record-label">طولانی‌ترین مار</div>
+                    <div class="record-value" id="max-length">0</div>
+                </div>
+                <div class="record-item">
+                    <div class="record-label">حافظه مصرفی</div>
+                    <div class="record-value" id="memory">0</div>
+                </div>
+                <div class="record-item">
+                    <div class="record-label">Uptime</div>
+                    <div class="record-value" id="uptime">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>🐍 بازیکنان فعال</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>نام</th>
+                            <th>امتیاز</th>
+                            <th>طول</th>
+                            <th>وضعیت</th>
+                        </tr>
+                    </thead>
+                    <tbody id="players-list">
+                        <tr><td colspan="4" class="no-data">بازیکنی آنلاین نیست</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>🏆 رتبه‌بندی ۱۰۰ نفر اول</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>رتبه</th>
+                            <th>نام</th>
+                            <th>امتیاز</th>
+                            <th>کشتار</th>
+                            <th>طول</th>
+                        </tr>
+                    </thead>
+                    <tbody id="top100-list">
+                        <tr><td colspan="5" class="no-data">در حال بارگذاری...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="refresh-badge"><span class="live-dot"></span> بروزرسانی هر 3 ثانیه</div>
+
+    <script>
+        // Create snowflakes
+        function createSnowflakes() {
+            const snowfall = document.querySelector('.snowfall');
+            for (let i = 0; i < 40; i++) {
+                const snowflake = document.createElement('div');
+                snowflake.className = 'snowflake';
+                snowflake.innerHTML = '❄';
+                snowflake.style.left = Math.random() * 100 + '%';
+                snowflake.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                snowflake.style.animationDelay = Math.random() * 5 + 's';
+                snowflake.style.fontSize = (Math.random() * 10 + 10) + 'px';
+                snowflake.style.opacity = Math.random() * 0.6 + 0.4;
+                snowfall.appendChild(snowflake);
+            }
+        }
+
+        function formatUptime(s) {
+            const h = Math.floor(s / 3600);
+            const m = Math.floor((s % 3600) / 60);
+            return h > 0 ? `${h}h ${m}m` : `${m}m`;
+        }
+
+        async function updateStats() {
+            try {
+                const res = await fetch('/api/admin/stats');
+                const data = await res.json();
+
+                document.getElementById('online-players').textContent = data.game.onlinePlayers;
+                document.getElementById('active-players').textContent = data.game.activePlayers;
+                document.getElementById('total-users').textContent = data.totals.users;
+                document.getElementById('total-games').textContent = data.totals.games;
+                document.getElementById('peak-players').textContent = data.peak.count;
+                document.getElementById('memory').textContent = data.server.memory.used + 'MB';
+                document.getElementById('uptime').textContent = formatUptime(data.server.uptime);
+
+                // Records from API
+                if (data.records) {
+                    document.getElementById('max-score').textContent = data.records.maxScore || 0;
+                    document.getElementById('max-kills').textContent = data.records.maxKills || 0;
+                    document.getElementById('max-length').textContent = data.records.maxLength || 0;
+                }
+
+                // Players table
+                const list = document.getElementById('players-list');
+                if (data.game.players?.length) {
+                    list.innerHTML = data.game.players.map(p => `
+                        <tr>
+                            <td>${p.name}</td>
+                            <td>${p.score}</td>
+                            <td>${p.length}</td>
+                            <td class="${p.alive ? 'status-alive' : 'status-dead'}">${p.alive ? '🟢' : '🔴'}</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    list.innerHTML = '<tr><td colspan="4" class="no-data">بازیکنی آنلاین نیست</td></tr>';
+                }
+
+                // Top 100 leaderboard
+                const top100List = document.getElementById('top100-list');
+                if (data.top100?.length) {
+                    top100List.innerHTML = data.top100.map((p, i) => {
+                        const rank = i + 1;
+                        let rankClass = 'rank-other';
+                        if (rank === 1) rankClass = 'rank-1';
+                        else if (rank === 2) rankClass = 'rank-2';
+                        else if (rank === 3) rankClass = 'rank-3';
+
+                        return `
+                            <tr class="${rank <= 3 ? 'top-3' : ''}">
+                                <td><span class="rank-badge ${rankClass}">${rank}</span></td>
+                                <td>${p.first_name} ${p.last_name}</td>
+                                <td>${p.high_score || 0}</td>
+                                <td>${p.total_kills || 0}</td>
+                                <td>${p.total_length || 0}</td>
+                            </tr>
+                        `;
+                    }).join('');
+                } else {
+                    top100List.innerHTML = '<tr><td colspan="5" class="no-data">هنوز بازیکنی ثبت نشده</td></tr>';
+                }
+            } catch (e) {
+                console.error('Error:', e);
+            }
+        }
+
+        createSnowflakes();
+        updateStats();
+        setInterval(updateStats, 3000);
+    </script>
+</body>
+</html>

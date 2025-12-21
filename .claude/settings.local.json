@@ -30,7 +30,23 @@
       "Bash(chmod:*)",
       "Bash(node:*)",
       "WebFetch(domain:github.com)",
-      "Bash(sshpass:*)"
+      "Bash(sshpass:*)",
+      "Bash(docker-compose down:*)",
+      "Bash(docker-compose ps:*)",
+      "Bash(./fix-persian-git.sh)",
+      "Bash(ssh root@37.152.174.87 \"docker exec yalda_snake_db psql -U snake_user -d yalda_snake -c ''\\\\d high_scores''\")",
+      "Bash(git restore:*)",
+      "Bash(ssh root@37.152.174.87 \"cd /opt/yalda-snake && ls -la && git status\")",
+      "Bash(ssh root@37.152.174.87 \"cd /opt/yalda-snake && git log --oneline -5\")",
+      "Bash(ssh root@37.152.174.87 \"cd /opt/yalda-snake && git add -A && git commit -m ''Server changes: PixiJS integration and game fixes from last night''\")",
+      "Bash(ssh root@37.152.174.87 \"cd /opt/yalda-snake && git remote add origin https://github.com/sedalcrazy-create/refahmaar.git && git fetch origin\")",
+      "Bash(ssh root@37.152.174.87 \"cd /opt/yalda-snake && git checkout -b main origin/main\")",
+      "Bash(ssh root@37.152.174.87 \"cd /opt/yalda-snake && git merge master --allow-unrelated-histories -m ''Merge master branch with PixiJS integration''\")",
+      "Bash(ssh root@37.152.174.87 \"cd /opt/yalda-snake && git merge --abort\")",
+      "Bash(ssh root@37.152.174.87 \"cd /opt/yalda-snake && git checkout master -- public/js/pixi-renderer.js public/js/asset-generator.js public/js/particle-effects.js public/js/game.js public/index.html app.js public/css/style.css\")",
+      "Bash(ssh root@37.152.174.87 \"cd /opt/yalda-snake && git add -A && git commit -m ''Merge PixiJS integration from master branch'' && git log --oneline -3\")",
+      "Bash(git fetch:*)",
+      "Bash(git pull:*)"
     ]
   }
 }

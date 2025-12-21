@@ -55,7 +55,7 @@ def send_persistent_keyboard(chat_id):
 
     return keyboard
 
-def send_contact_request(chat_id):
+def send_contact_request(chat_id, first_time=True):
     """Send keyboard with contact request button"""
     keyboard = {
         'keyboard': [[
@@ -68,8 +68,20 @@ def send_contact_request(chat_id):
         'one_time_keyboard': True
     }
 
-    text = '✅ کد استخدامی ثبت شد.\n\nحالا لطفاً شماره تماس خود را با کلیک روی دکمه زیر ارسال کنید:'
-    send_message(chat_id, text, reply_markup=keyboard)
+    if first_time:
+        text = '''✅ کد استخدامی ثبت شد.
+
+⚠️ <b>توجه مهم:</b>
+برای ثبت شماره تماس، حتماً روی دکمه آبی «📱 ارسال شماره تماس» در پایین صفحه کلیک کنید.
+
+❌ <b>شماره را تایپ نکنید!</b>
+فقط با کلیک روی دکمه، شماره شما ثبت می‌شود.'''
+    else:
+        text = '''⚠️ <b>لطفاً شماره را تایپ نکنید!</b>
+
+روی دکمه آبی «📱 ارسال شماره تماس» در پایین صفحه کلیک کنید.'''
+
+    send_message(chat_id, text, reply_markup=keyboard, parse_mode='HTML')
 
 def check_user_exists(bale_user_id):
     """Check if user exists in database"""
@@ -122,7 +134,7 @@ def get_user_stats(bale_user_id):
 
 def format_leaderboard_message(leaderboard):
     """Format leaderboard message"""
-    message = """🏆 <b>برترین بازیکنان</b>
+    message = """🏆 <b>برترین بازیکنان (مجموع ۳ بازی)</b>
 
 """
 
@@ -132,7 +144,8 @@ def format_leaderboard_message(leaderboard):
         name = f"{player['first_name']} {player['last_name']}"
         if player['first_name'] == 'pending':
             name = 'بازیکن'
-        message += f"{medal} {name}: {player['high_score']} امتیاز\n"
+        games = player.get('games_played', 0)
+        message += f"{medal} {name}: {player['high_score']} ({games} بازی)\n"
 
     message += """\n✨ شادابی و سلامت در سایه رفاه ✨"""
 
@@ -145,15 +158,22 @@ def show_user_stats(chat_id, bale_user_id):
     if stats_data and stats_data.get('stats'):
         stats = stats_data['stats']
         name = f"{stats['first_name']} {stats['last_name']}"
+        games_played = stats.get('games_played', 0)
+        games_remaining = max(0, 3 - games_played)
+        total_kills = stats.get('total_kills', 0)
 
         message = f"""📊 <b>آمار {name}</b>
 
 🏅 رتبه شما: {stats['rank'] or 'نامشخص'}
-⭐ بالاترین امتیاز: {stats['high_score']}
-🎮 تعداد بازی: {stats['games_played']}
-🐍 بیشترین طول مار: {stats['max_length']}
+⭐ مجموع امتیاز: {stats['high_score']}
+💀 تعداد کشتار: {total_kills}
+🎮 تعداد بازی: {games_played} از 3
+🐍 مجموع طول مار: {stats['max_length']}"""
 
-✨ شادابی و سلامت در سایه رفاه ✨"""
+        if games_remaining > 0:
+            message += f"\n\n📍 شما هنوز {games_remaining} بازی دارید!"
+
+        message += "\n\n✨ شادابی و سلامت در سایه رفاه ✨"
 
         send_message(chat_id, message, parse_mode='HTML')
     else:
@@ -204,7 +224,7 @@ def handle_start(chat_id, user):
         # New user - start registration flow
         welcome_text = f"""سلام {first_name} عزیز! 👋
 
-به چالش مار یلدایی اداره کل رفاه و درمان خوش آمدید 🎮
+به چالش یلدایی اداره کل رفاه و درمان خوش آمدید 🎮
 
 🌙 شب یلدا مبارک!
 
@@ -249,7 +269,7 @@ def handle_employee_code(chat_id, employee_code):
     user_states[chat_id]['state'] = 'waiting_contact'
 
     # Send contact request button
-    send_contact_request(chat_id)
+    send_contact_request(chat_id, first_time=True)
 
 def format_phone_number(phone):
     """Format phone number to 09xxxxxxxxx format"""
@@ -334,12 +354,17 @@ def handle_message(message):
         handle_contact(chat_id, contact)
         return
 
-    # Handle persistent keyboard buttons
+    # Handle persistent keyboard buttons - use bale_user_id directly from message
+    bale_user_id = user.get('id')
+
     if text == '📊 آمار من':
-        user_state = user_states.get(chat_id, {})
-        bale_user_id = user_state.get('user_id')
         if bale_user_id:
-            show_user_stats(chat_id, bale_user_id)
+            # Check if user exists in database first
+            existing_user = check_user_exists(bale_user_id)
+            if existing_user:
+                show_user_stats(chat_id, bale_user_id)
+            else:
+                send_message(chat_id, 'شما هنوز ثبت‌نام نکرده‌اید. لطفاً دستور /start را ارسال کنید.')
         else:
             send_message(chat_id, 'لطفاً ابتدا دستور /start را ارسال کنید.')
         return
@@ -359,8 +384,8 @@ def handle_message(message):
     elif current_state == 'waiting_employee_code':
         handle_employee_code(chat_id, text)
     elif current_state == 'waiting_contact':
-        send_message(chat_id, 'لطفاً از دکمه زیر برای ارسال شماره تماس استفاده کنید.')
-        send_contact_request(chat_id)
+        # User typed something instead of clicking the button
+        send_contact_request(chat_id, first_time=False)
     elif current_state == 'registered':
         # User already registered, show help
         send_message(chat_id, 'از دکمه‌های زیر برای استفاده از ربات استفاده کنید:\n\n🎮 شروع بازی - برای ورود به بازی\n📊 آمار من - مشاهده آمار شما\n🏆 جدول امتیازات - مشاهده برترین بازیکنان')

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>قوانین مسابقه - چالش یلدایی</title>
+    <style>
+        :root {
+            --yalda-red: #8B0000;
+            --yalda-crimson: #DC143C;
+            --yalda-gold: #FFD700;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'IranSans', Tahoma, Arial, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            direction: rtl;
+            color: #fff;
+            background: linear-gradient(135deg, #3d0814 0%, #8B0000 25%, #DC143C 50%, #8B0000 75%, #3d0814 100%);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            padding: 30px;
+            background: rgba(0,0,0,0.4);
+            border-radius: 20px;
+            border: 2px solid var(--yalda-gold);
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            color: var(--yalda-gold);
+            margin-bottom: 10px;
+        }
+
+        .section {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid var(--yalda-crimson);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .section h2 {
+            color: var(--yalda-gold);
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--yalda-crimson);
+            padding-bottom: 10px;
+        }
+
+        .section p, .section li {
+            color: #ddd;
+            line-height: 1.8;
+            font-size: 1rem;
+        }
+
+        .section ul {
+            list-style: none;
+            padding-right: 15px;
+        }
+
+        .section li {
+            margin-bottom: 10px;
+            position: relative;
+            padding-right: 25px;
+        }
+
+        .section li::before {
+            content: "🔸";
+            position: absolute;
+            right: 0;
+        }
+
+        .highlight {
+            background: rgba(255, 215, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid var(--yalda-gold);
+            margin: 15px 0;
+        }
+
+        .formula {
+            background: rgba(139, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.1rem;
+            margin: 15px 0;
+            font-weight: bold;
+            color: var(--yalda-gold);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: center;
+            border: 1px solid var(--yalda-crimson);
+        }
+
+        th {
+            background: rgba(139, 0, 0, 0.5);
+            color: var(--yalda-gold);
+        }
+
+        td {
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .emoji {
+            font-size: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏆 قوانین مسابقه چالش یلدایی 🐍</h1>
+            <p>اداره کل رفاه و درمان</p>
+        </div>
+
+        <div class="section">
+            <h2>🎮 نحوه بازی</h2>
+            <ul>
+                <li>هر کاربر می‌تواند حداکثر <strong>۳ بازی</strong> انجام دهد</li>
+                <li>هر بازی حداکثر <strong>۳ دقیقه</strong> زمان دارد</li>
+                <li>با خوردن غذا امتیاز کسب می‌کنید و مار بزرگ‌تر می‌شود</li>
+                <li>با از بین بردن مارهای دیگر، امتیاز آنها به شما اضافه می‌شود</li>
+                <li>اگر سر مار شما به بدن مار دیگری برخورد کند، بازی تمام می‌شود</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>📊 سیستم امتیازدهی</h2>
+            <p>امتیاز نهایی شما برابر است با:</p>
+            <div class="formula">
+                مجموع امتیاز = امتیاز بازی ۱ + امتیاز بازی ۲ + امتیاز بازی ۳
+            </div>
+            <div class="highlight">
+                <strong>نکته مهم:</strong> تمام ۳ بازی شما با هم جمع می‌شود، نه فقط بهترین بازی!
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🏅 نحوه رتبه‌بندی ۱۰۰ نفر اول</h2>
+            <p>رتبه‌بندی بر اساس معیارهای زیر انجام می‌شود:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>اولویت</th>
+                        <th>معیار</th>
+                        <th>توضیح</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="emoji">🥇</span> اول</td>
+                        <td>مجموع امتیاز</td>
+                        <td>جمع امتیاز هر ۳ بازی</td>
+                    </tr>
+                    <tr>
+                        <td><span class="emoji">🥈</span> دوم</td>
+                        <td>مجموع طول مار</td>
+                        <td>در صورت تساوی امتیاز</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="highlight">
+                <strong>در صورت تساوی کامل:</strong> اگر دو نفر در هر دو معیار برابر باشند، بازی پلی‌آف برگزار می‌شود.
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>💀 سیستم کشتار (Kill)</h2>
+            <ul>
+                <li>وقتی مار دیگری به شما برخورد کند و بمیرد، یک Kill ثبت می‌شود</li>
+                <li>امتیاز مار کشته شده به امتیاز شما اضافه می‌شود</li>
+                <li>تعداد Kill در آمار شما نمایش داده می‌شود</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>📋 مثال عملی</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>بازیکن</th>
+                        <th>بازی ۱</th>
+                        <th>بازی ۲</th>
+                        <th>بازی ۳</th>
+                        <th>مجموع</th>
+                        <th>رتبه</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>علی</td>
+                        <td>150</td>
+                        <td>200</td>
+                        <td>180</td>
+                        <td><strong>530</strong></td>
+                        <td>🥇 اول</td>
+                    </tr>
+                    <tr>
+                        <td>رضا</td>
+                        <td>300</td>
+                        <td>100</td>
+                        <td>120</td>
+                        <td><strong>520</strong></td>
+                        <td>🥈 دوم</td>
+                    </tr>
+                    <tr>
+                        <td>مریم</td>
+                        <td>160</td>
+                        <td>170</td>
+                        <td>180</td>
+                        <td><strong>510</strong></td>
+                        <td>🥉 سوم</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p style="margin-top: 15px; color: #aaa; font-size: 0.9rem;">
+                توجه: رضا با وجود بهترین نتیجه تک بازی (۳۰۰)، رتبه دوم است چون مجموع ۳ بازی او کمتر از علی است.
+            </p>
+        </div>
+
+        <div class="section">
+            <h2>🎯 نکات راهبردی</h2>
+            <ul>
+                <li>سعی کنید در هر ۳ بازی عملکرد ثابت و خوبی داشته باشید</li>
+                <li>Kill کردن مارهای بزرگ امتیاز بیشتری می‌دهد</li>
+                <li>صبر کنید تا مارهای دیگر بزرگ شوند، سپس آنها را شکار کنید</li>
+                <li>از حاشیه‌های صفحه برای فرار استفاده کنید</li>
+            </ul>
+        </div>
+
+        <div class="section" style="text-align: center; background: rgba(255,215,0,0.1);">
+            <h2 style="border: none;">🍉 یلداتان مبارک 🎉</h2>
+            <p>شب یلدا، شب انار و هندوانه و... مار!</p>
+        </div>
+    </div>
+</body>
+</html>
